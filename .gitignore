@@ -1,0 +1,8 @@
+.venv
+.vscode
+.pytest_cache
+
+# secrets
+.env 
+credentials/
+.tokens/*.json
