@@ -38,6 +38,10 @@ backend/agents/search/
 ```bash
 pip install google-cloud-aiplatform google-adk pytest
 ```
+or
+```bash
+pip install -r backend/requirements.txt
+```
 
 2. Update project ID in `agent.py`:
    - Replace `project="xxx"` with your own Google cloud project ID

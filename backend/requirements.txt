@@ -8,10 +8,12 @@ cryptography==45.0.2
 dnspython==2.7.0
 email_validator==2.2.0
 firebase-admin==6.8.0
+google-adk==1.0.0
 google-api-core==2.24.2
 google-api-python-client==2.170.0
 google-auth==2.40.2
 google-auth-httplib2==0.2.0
+google-cloud-aiplatform==1.94.0
 google-cloud-core==2.4.3
 google-cloud-firestore==2.20.2
 google-cloud-storage==3.1.0
