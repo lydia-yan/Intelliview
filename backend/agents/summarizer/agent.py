@@ -6,7 +6,6 @@ import asyncio
 import sys
 import re
 
-# Add the project root to the Python path if necessary
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 
 from google.adk.agents import LlmAgent
@@ -32,26 +31,26 @@ SUMMARIZER_AGENT = LlmAgent(
     tools=[google_search]
 )
 
-def summarize_resume(resume_text, linkedin_info, github_info, portfolio_info, additional_info, job_description):
+def summarize_resume(resume_text, linkedinLink, githubLink, portfolioLink, additionalInfo, job_description):
     """
     Analyze and summarize user resume and related information
     
     Args:
         resume_text: Resume text content extracted from PDF
-        linkedin_info: LinkedIn link or related information
-        github_info: GitHub link or related information
-        portfolio_info: Portfolio link or related information
-        additional_info: Additional information provided by the user
+        linkedinLink: LinkedIn link or related information
+        githubLink: GitHub link or related information
+        portfolioLink: Portfolio link or related information
+        additionalInfo: Additional information provided by the user
         job_description: Target job description
         
     Returns:
         dict: Structured resume summary information
     """
     return asyncio.run(_run_summarizer(
-        resume_text, linkedin_info, github_info, portfolio_info, additional_info, job_description
+        resume_text, linkedinLink, githubLink, portfolioLink, additionalInfo, job_description
     ))
 
-async def _run_summarizer(resume_text, linkedin_info, github_info, portfolio_info, additional_info, job_description):
+async def _run_summarizer(resume_text, linkedinLink, githubLink, portfolioLink, additionalInfo, job_description):
     """Internal async function that executes the AI call"""
     # Prepare input data
     input_data = f"""
@@ -59,16 +58,16 @@ async def _run_summarizer(resume_text, linkedin_info, github_info, portfolio_inf
     {resume_text}
     
     ## LinkedIn URL (SEARCH THIS EXACT URL)
-    {linkedin_info}
+    {linkedinLink}
     
     ## GitHub URL (SEARCH THIS EXACT URL)
-    {github_info}
+    {githubLink}
     
     ## Portfolio URL (SEARCH THIS EXACT URL)
-    {portfolio_info}
+    {portfolioLink}
     
     ## Additional Information
-    {additional_info}
+    {additionalInfo}
     
     ## Job Description
     {job_description}
@@ -109,20 +108,16 @@ async def _run_summarizer(resume_text, linkedin_info, github_info, portfolio_inf
     
     # Parse JSON result
     try:
-        # First, try to extract JSON from Markdown code blocks if present
         markdown_json_pattern = r"```(?:json)?\s*([\s\S]*?)\s*```"
         markdown_matches = re.findall(markdown_json_pattern, response_text)
         
         if markdown_matches:
-            # Use the first JSON code block found
             clean_json_str = markdown_matches[0].strip()
             result = json.loads(clean_json_str)
         else:
-            # If no code blocks found, try direct parsing
             result = json.loads(response_text)
             
     except json.JSONDecodeError:
-        # If still not valid JSON, try to extract JSON part using braces
         try:
             start_index = response_text.find('{')
             end_index = response_text.rfind('}') + 1
