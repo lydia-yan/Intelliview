@@ -43,6 +43,7 @@ class Feedback(BaseModel):
     overallRating: int
     focusTags: List[str]
 
+# PersonalExperience and RecommendedQA (nested within Workflow)
 class PersonalExperience(BaseModel):
     resumeInfo: str
     linkedinInfo: str
@@ -55,18 +56,6 @@ class RecommendedQA(BaseModel):
     question: str
     answer: str
     tags: List[str]
-
-
-class FeedbackImprovementArea(BaseModel):
-    topic: str
-    example: str
-    suggestion: str
-
-class GeneralBQ(BaseModel):
-    id: str
-    question: str
-    category: str
-    tags: Optional[List[str]] = None
 
 # Workflow Schema
 class Workflow(BaseModel):

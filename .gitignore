@@ -2,6 +2,10 @@
 .vscode
 .pytest_cache
 
+# compiled bytecode files
+__pycache__/
+*.py[cod]
+
 # secrets
 .env 
 credentials/
