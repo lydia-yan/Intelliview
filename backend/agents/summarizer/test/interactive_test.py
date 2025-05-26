@@ -11,6 +11,12 @@ import sys
 # Add the project root to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../")))
 
+# Import unified config and set environment variables
+from backend.config import set_google_cloud_env_vars
+
+# Set up environment variables before importing agent
+set_google_cloud_env_vars()
+
 # Import from parent directory
 from backend.agents.summarizer import agent
 from backend.agents.summarizer.test.mock_data import create_mock_data
@@ -19,11 +25,7 @@ def run_interactive_test():
     """
     Run a simple test showing the resume summarizer output
     """
-    # Set environment variables for Vertex AI
-    os.environ["GOOGLE_CLOUD_PROJECT"] = "xxx"  # Replace with your project ID
-    os.environ["GOOGLE_CLOUD_LOCATION"] = "us-central1"
-    os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
-    
+
     print("Testing resume summarizer...")
     
     # Get test data and run summarizer
