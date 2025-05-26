@@ -35,16 +35,28 @@ backend/agents/search/
 ### Installation
 
 1. Install dependencies:
-```bash
-pip install google-cloud-aiplatform google-adk pytest
-```
-or
-```bash
-pip install -r backend/requirements.txt
-```
+  ```bash
+  pip install google-cloud-aiplatform google-adk pytest python-dotenv
+  ```
 
-2. Update project ID in `agent.py`:
-   - Replace `project="xxx"` with your own Google cloud project ID
+2. **Configure environment variables:**
+   
+   Create a `.env` file in the `backend/` directory:
+   ```bash
+   # backend/.env
+   GOOGLE_CLOUD_PROJECT=your-actual-project-id
+   GOOGLE_CLOUD_LOCATION=us-central1
+   GOOGLE_GENAI_USE_VERTEXAI=True
+   ```
+
+   Replace `your-actual-project-id` with your Google Cloud project ID.
+
+3. **Authentication:**
+   
+   Make sure you're authenticated with Google Cloud:
+   ```bash
+   gcloud auth application-default login
+   ```
 
 ## Usage
 

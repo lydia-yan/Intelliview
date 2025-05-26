@@ -16,6 +16,12 @@ from google.adk.tools import google_search
 from google.genai import types
 from .prompt import SEARCH_PROMPT
 
+# Import unified config
+from backend.config import set_google_cloud_env_vars
+
+# Load environment variables
+set_google_cloud_env_vars()
+
 # Create global agent instance
 SEARCH_AGENT = LlmAgent(
     model="gemini-2.0-flash", 

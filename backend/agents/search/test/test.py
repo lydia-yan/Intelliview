@@ -13,15 +13,16 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.
 from backend.agents.search import search_interview_questions
 from backend.agents.search.test.mock_data import create_mock_data
 
+# Import unified config
+from backend.config import set_google_cloud_env_vars
+
+# Load environment variables
+set_google_cloud_env_vars()
+
 def test_interview_questions_search():
     """
     Test the interview questions search functionality
     """
-    # Set environment variables
-    os.environ["GOOGLE_CLOUD_PROJECT"] = "xxx"  # Replace with your project ID
-    os.environ["GOOGLE_CLOUD_LOCATION"] = "us-central1"
-    os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
-    
     # Get test data
     mock_data_obj = create_mock_data()
     
