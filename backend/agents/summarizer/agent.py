@@ -9,7 +9,7 @@ import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 
 # Import unified config
-from backend.config import set_google_cloud_env_vars, get_google_ai_client
+from backend.config import set_google_cloud_env_vars
 
 # Load environment variables
 set_google_cloud_env_vars()
@@ -20,9 +20,6 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.tools import google_search
 from google.genai import types
 from .prompt import SUMMARIZER_PROMPT
-
-# Configure Google AI client using unified config
-client = get_google_ai_client()
 
 # Create global agent instance
 SUMMARIZER_AGENT = LlmAgent(
