@@ -169,15 +169,6 @@ async def _run_answer_generator(questions_data, personal_summary):
     
     ## INTERVIEW QUESTIONS TO ANSWER
     {json.dumps(questions_only, indent=2)}
-    
-    ## TASK REQUIREMENTS
-    - Generate concise but clear personalized answers for each question based on the candidate's actual background
-    - Keep answers focused and well-structured but not overly long (100-200 words each)
-    - Include specific examples, metrics, and quantifiable results from the candidate's experience
-    - Show clear analytical thinking and problem-solving approach
-    - Demonstrate both technical skills and soft skills relevant to the role
-    - Answers should be authentic and grounded in the candidate's real experience
-    - For behavioral questions, structure thinking clearly
     """
     
     # Set up ADK runtime environment

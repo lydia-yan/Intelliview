@@ -89,15 +89,7 @@ async def _run_question_generator(personal_summary, industry_faqs, num_questions
     {json.dumps(general_bqs, indent=2)}
     
     ## TASK REQUIREMENTS
-    - Generate EXACTLY {num_questions} interview questions (NO MORE, NO LESS)
-    - Include mix of technical questions and behavioral questions (BQ)
-    - Connect candidate's background with target job requirements
-    - Customize industry-standard questions for this specific candidate and role
-    - Include relevant general behavioral questions from database
-    - Questions should be concise but clear
-    - Ensure questions are appropriate for the job level and company context
-    
-    IMPORTANT: The output JSON array must contain EXACTLY {num_questions} questions.
+    IMPORTANT: The output JSON array must contain EXACTLY {num_questions} questions(NO MORE, NO LESS).
     """
     
     # Set up ADK runtime environment
