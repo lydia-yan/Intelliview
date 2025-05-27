@@ -23,7 +23,7 @@ def setup_workflow_and_interview():
     experience_data = {k: v for k, v in personalExperience.items() if k != "title"}
 
     # Create workflow using the extracted title
-    workflow_data = Workflow(title=workflow_title, position="Software Engineer")
+    workflow_data = Workflow(title=workflow_title)  #title include the position and company name
     workflow_result = database.firestore_db.create_or_update_workflow(TEST_USER_ID, workflow_data)
     workflow_id = workflow_result["workflowId"]
 

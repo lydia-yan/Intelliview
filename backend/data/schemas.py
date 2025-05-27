@@ -70,11 +70,8 @@ class Workflow(BaseModel):
 
 # System Data Schema
 class GeneralBQ(BaseModel):
-    id: str
+    id: str #use for document name and will not include in the data
     question: str
     category: Optional[str] = None
     tags: Optional[List[str]] = None
-
-class SystemData(BaseModel):
-    general_questions: List[GeneralBQ]
 
