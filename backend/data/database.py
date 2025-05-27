@@ -1,5 +1,5 @@
 from backend.data.schemas import (
-    Profile, Interview, Workflow, SystemData, Feedback,
+    Profile, Interview, Workflow, Feedback,
     PersonalExperience, RecommendedQA, TranscriptTurn, GeneralBQ
 )
 from datetime import datetime, timezone
@@ -125,25 +125,6 @@ class FirestoreDB:
         doc_ref.delete()
         return {"message": f"Workflow {workflow_id} for user {user_id} deleted successfully"}
 
-    # --- System Data Operations ---
-    def create_or_update_system_data(self, system_data: SystemData) -> Dict[str, str]:
-        """Create or update system data (general questions)."""
-        doc_ref = self.db.collection('system_data').document('general_questions')
-        doc_ref.set(system_data.model_dump())
-        return {"message": "System data created/updated successfully"}
-
-    def get_system_data(self) -> Optional[Dict[str, Any]]:
-        """Retrieve system data (general questions)."""
-        doc_ref = self.db.collection('system_data').document('general_questions')
-        doc = doc_ref.get()
-        return doc.to_dict() if doc.exists else None
-
-    def delete_system_data(self) -> Dict[str, str]:
-        """Delete system data (general questions)."""
-        doc_ref = self.db.collection('system_data').document('general_questions')
-        doc_ref.delete()
-        return {"message": "System data deleted successfully"}
-
     # --- Personal Experience in Workflow ---
     def set_personal_experience(self, user_id: str, workflow_id: str, experience: PersonalExperience) -> Dict[str, str]:
         doc_ref = self.db.collection('users').document(user_id).collection('workflows').document(workflow_id)
@@ -201,17 +182,27 @@ class FirestoreDB:
     # --- General Behavioral Questions Operations ---
     def set_general_bqs(self, bqs: List[GeneralBQ]) -> Dict[str, str]:
         """Set general behavioral questions."""
-        doc_ref = self.db.collection('system_data').document('general_bqs')
-        doc_ref.set({"bqs": [bq.model_dump() for bq in bqs]}) 
+        doc_ref = self.db.collection("bqs")
+        for bq in bqs:
+            doc_ref.document(bq.id).set(bq.model_dump(exclude={"id"}))
         return {"message": "General behavioral questions set successfully"}
 
     def get_general_bqs(self) -> Optional[List[Dict[str, Any]]]:
         """Retrieve general behavioral questions."""
-        doc_ref = self.db.collection('system_data').document('general_bqs')
-        doc = doc_ref.get()
-        if doc.exists:
-            return doc.to_dict().get("bqs", [])
-        return None
+        docs = list(self.db.collection("bqs").stream())
+        if not docs:
+            return None
+        return [doc.to_dict() for doc in docs]
     
+
+    def delete_general_bqs(self) -> Dict[str, str]:
+        """Delete system data (general questions)."""
+        docs = list(self.db.collection("bqs").stream())
+        deleted_count = 0
+        for doc in docs:
+            doc.reference.delete()
+            deleted_count += 1
+
+        return {"message": f"Deleted {deleted_count} behavioral questions from 'bqs' collection."}
 # Create shared FirestoreDB instance
 firestore_db = FirestoreDB(db)
