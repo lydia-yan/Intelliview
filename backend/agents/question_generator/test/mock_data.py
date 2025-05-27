@@ -392,5 +392,5 @@ def create_mock_data():
     return {
         "personal_summary": create_mock_personal_summary(),
         "industry_faqs": create_mock_industry_faqs(),
-        "num_questions": 8
+        "num_questions": 50
     }

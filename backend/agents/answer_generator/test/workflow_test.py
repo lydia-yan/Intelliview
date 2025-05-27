@@ -39,7 +39,7 @@ def test_complete_workflow():
     questions = generate_custom_questions(
         personal_summary=personal_summary,
         industry_faqs=industry_faqs,
-        num_questions=3
+        num_questions=50
     )
     
     if not isinstance(questions, list) or len(questions) == 0:

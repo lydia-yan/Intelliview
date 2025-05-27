@@ -31,7 +31,7 @@ QUESTION_GENERATOR_AGENT = LlmAgent(
     tools=[]  # No tools needed - uses provided data from summarizer, search agents, and database
 )
 
-def generate_custom_questions(personal_summary, industry_faqs, num_questions=10):
+def generate_custom_questions(personal_summary, industry_faqs, num_questions=50):
     """
     Generate customized interview questions based on user background, industry FAQs, and general behavioral questions
     
