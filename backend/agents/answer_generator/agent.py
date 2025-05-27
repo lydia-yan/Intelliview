@@ -61,6 +61,11 @@ async def _run_answer_generator_and_save(questions_data, personal_summary, user_
             "raw_result": answers_result
         }
     
+    return await _save_answers_to_db(answers_result, user_id, workflow_id)
+
+async def _save_answers_to_db(answers_result, user_id, workflow_id):
+    """Save generated answers to database"""
+    
     # Convert to RecommendedQA objects for database storage
     try:
         recommended_qas = []
@@ -270,49 +275,3 @@ async def _run_answer_generator(questions_data, personal_summary):
         return validated_result
     
     return result
-
-def update_questions_with_answers(questions_data, answers_data):
-    """
-    Helper function to merge questions with generated answers
-    
-    Args:
-        questions_data: Original questions from question_generator
-        answers_data: Generated answers from answer_generator
-        
-    Returns:
-        list: Combined questions and answers in RecommendedQA format
-    """
-    if not isinstance(questions_data, list) or not isinstance(answers_data, list):
-        return []
-    
-    combined_results = []
-    
-    # Match questions with answers
-    for i, question_item in enumerate(questions_data):
-        if i < len(answers_data):
-            answer_item = answers_data[i]
-            
-            # Create combined item
-            combined_item = {
-                "question": question_item.get("question", "") if isinstance(question_item, dict) else str(question_item),
-                "answer": answer_item.get("answer", "") if isinstance(answer_item, dict) else str(answer_item),
-                "tags": []
-            }
-            
-            # Combine tags from both sources
-            question_tags = question_item.get("tags", []) if isinstance(question_item, dict) else []
-            answer_tags = answer_item.get("tags", []) if isinstance(answer_item, dict) else []
-            
-            # Ensure tags are lists
-            if not isinstance(question_tags, list):
-                question_tags = [question_tags] if question_tags else []
-            if not isinstance(answer_tags, list):
-                answer_tags = [answer_tags] if answer_tags else []
-            
-            # Combine and deduplicate tags
-            all_tags = list(set(question_tags + answer_tags))
-            combined_item["tags"] = all_tags
-            
-            combined_results.append(combined_item)
-    
-    return combined_results
