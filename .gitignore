@@ -6,6 +6,9 @@
 __pycache__/
 *.py[cod]
 
+# macOS system files
+.DS_Store
+
 # secrets
 .env 
 credentials/
