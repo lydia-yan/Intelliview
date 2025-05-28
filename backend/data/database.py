@@ -1,6 +1,6 @@
 from backend.data.schemas import (
     Profile, Interview, Workflow, Feedback,
-    PersonalExperience, RecommendedQA, TranscriptTurn, GeneralBQ
+    PersonalExperience, RecommendedQA, GeneralBQ
 )
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
@@ -75,19 +75,15 @@ class FirestoreDB:
         return {"message": f"Profile fields for user {user_id} deleted successfully"}
 
     # --- Interview Operations ---
-    def create_interview(self, user_id: str, workflow_id: str, interview_data: Interview) -> Dict[str, str]:
+    def create_interview(self, user_id: str, session_id: str, interview_data: Interview) -> Dict[str, str]:
         """Create a new interview record with a unique interviewId."""
-        interviews_ref = self.db.collection('users').document(user_id).collection('interviews')
-        doc_ref = interviews_ref.document() 
-
-        interview_id = doc_ref.id
-        interview_data.workflowId = workflow_id
+        doc_ref = self.db.collection('users').document(user_id).collection('interviews').document(session_id)
         interview_data.createAt = datetime.now(timezone.utc)
 
         doc_ref.set(interview_data.model_dump(), merge=True)
         return {
-            "message": f"Interview {interview_id} created for user {user_id}",
-            "interviewId": interview_id
+            "message": f"Interview {session_id} successfully created for user {user_id}",
+            "interviewId": session_id
         }
 
 
@@ -104,14 +100,13 @@ class FirestoreDB:
         return {"message": f"Interview {interview_id} for user {user_id} deleted successfully"}
 
     # --- Workflow Operations ---
-    def create_or_update_workflow(self, user_id: str, workflow_data: Workflow) -> Dict[str, str]:
-        doc_ref = self.db.collection('users').document(user_id).collection('workflows').document()
-        workflow_id = doc_ref.id
+    def create_or_update_workflow(self, user_id: str, session_id: str, workflow_data: Workflow) -> Dict[str, str]:
+        doc_ref = self.db.collection('users').document(user_id).collection('workflows').document(session_id)
         
         workflow_data.createAt = datetime.now(timezone.utc)
         doc_ref.set(workflow_data.model_dump(), merge = True)
 
-        return {"message": f"Workflow {workflow_id} created", "workflowId": workflow_id}
+        return {"message": f"Workflow {session_id} successfully created for {user_id}", "workflowId": session_id}
 
     def get_workflow(self, user_id: str, workflow_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve a workflow record."""
@@ -152,10 +147,6 @@ class FirestoreDB:
         return None
 
     # --- Transcript Operations ---
-    def set_transcript(self, user_id: str, interview_id: str, transcript: List[TranscriptTurn]) -> Dict[str, str]:
-        doc_ref = self.db.collection('users').document(user_id).collection('interviews').document(interview_id)
-        doc_ref.set({"transcript": [turn.model_dump() for turn in transcript]}, merge=True)
-        return {"message": f"Transcript set for interview {interview_id}"}
 
     def get_transcript(self, user_id: str, interview_id: str) -> Optional[List[Dict[str, Any]]]:
         """Retrieve transcript of an interview."""

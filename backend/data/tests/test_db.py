@@ -21,38 +21,39 @@ def setup_workflow_and_interview():
     # Create workflow
     workflow_title = personalExperience["title"]
     experience_data = {k: v for k, v in personalExperience.items() if k != "title"}
-
+    workflow_session_id = "workflow_session"
     # Create workflow using the extracted title
     workflow_data = Workflow(title=workflow_title)  #title include the position and company name
-    workflow_result = database.firestore_db.create_or_update_workflow(TEST_USER_ID, workflow_data)
-    workflow_id = workflow_result["workflowId"]
+    workflow_result = database.firestore_db.create_or_update_workflow(TEST_USER_ID, workflow_session_id, workflow_data)
+    assert "successfully" in workflow_result["message"]
 
     experience = PersonalExperience(**experience_data)
     
-    result = database.firestore_db.set_personal_experience(TEST_USER_ID, workflow_id, experience)
+    result = database.firestore_db.set_personal_experience(TEST_USER_ID, workflow_session_id, experience)
     assert "successfully" in result["message"]
 
     qas = [RecommendedQA(**qa) for qa in recommendedQAs]
-    result = database.firestore_db.set_recommended_qas(TEST_USER_ID, workflow_id, qas)
+    result = database.firestore_db.set_recommended_qas(TEST_USER_ID, workflow_session_id, qas)
     assert "successfully" in result["message"]
 
     # Create interview
-    interview_data = Interview()
-    interview_result = database.firestore_db.create_interview(TEST_USER_ID, workflow_id, interview_data)
-    interview_id = interview_result["interviewId"]
+    interview_data = Interview(
+        duration_minutes=30,
+        transcript=transcript,  #should we add duration here?
+        workflowId="abc"
+    )
+    interview_session_id = "session_1"
+    interview_result = database.firestore_db.create_interview(TEST_USER_ID, interview_session_id, interview_data)
+    assert "successfully" in interview_result["message"]
 
-    turns = [TranscriptTurn(**t) for t in transcript]
-
-    result = database.firestore_db.set_transcript(TEST_USER_ID, interview_id, turns)
-    assert "Transcript set" in result["message"]
 
     feedback_obj = Feedback(**feedback)
 
-    result = database.firestore_db.set_feedback(TEST_USER_ID, interview_id, feedback_obj)
+    result = database.firestore_db.set_feedback(TEST_USER_ID, interview_session_id, feedback_obj)
     assert "Feedback set" in result["message"]
 
 
-    return TEST_USER_ID, workflow_id, interview_id
+    return TEST_USER_ID, workflow_session_id, interview_session_id
 
 # ------------------ Test Personal Experience ------------------
 
@@ -77,14 +78,14 @@ def test_set_recommended_qas(setup_workflow_and_interview):
 
 # ------------------ Test Transcript ------------------
 
-def test_set_transcript(setup_workflow_and_interview):
+def test_get_transcript(setup_workflow_and_interview):
     user_id, _, interview_id = setup_workflow_and_interview
     turns = [TranscriptTurn(**t) for t in transcript]
 
     retrieved = database.firestore_db.get_transcript(user_id, interview_id)
     assert retrieved is not None
     assert len(retrieved) == len(turns)
-    assert retrieved[0]["text"] == turns[0].text
+    assert retrieved[0]["message"] == turns[0].message
 
 # ------------------ Test Feedback ------------------
 

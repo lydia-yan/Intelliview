@@ -15,14 +15,15 @@ class Profile(BaseModel):
 
 # Interview Schema
 class TranscriptTurn(BaseModel):
-    speaker: str # "AI" or "user"
-    text: str
+    role: str # "AI" or "user"
+    message: str
 
 class Interview(BaseModel):
-    transcript: List[Dict[str, Any]]  = None
+    transcript: List[Dict[str, Any]] 
     feedback: Dict[str, Any] = None
     createAt: datetime = None
-    workflowId: str = None #assign it after creation 
+    duration_minutes: int
+    workflowId: str
 
 # Feedback Schema (nested within Interview)
 class FeedbackImprovementArea(BaseModel):

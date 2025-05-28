@@ -35,20 +35,20 @@ recommendedQAs = [
 # Fix: Convert from set to list format
 transcript = [
     {
-      "speaker": "AI",
-      "text": "Tell me about a time you had to learn something quickly."
+      "role": "AI",
+      "message": "Tell me about a time you had to learn something quickly."
     },
     {
-      "speaker": "user",
-      "text": "When I joined my internship, I had to learn GraphQL within two days...and "
+      "role": "user",
+      "message": "When I joined my internship, I had to learn GraphQL within two days...and "
     },
     {
-      "speaker": "AI",
-      "text": "Great. How did that affect your work?"
+      "role": "AI",
+      "message": "Great. How did that affect your work?"
     },
     {
-      "speaker": "user",
-      "text": "It helped me build the feature in half the time and reduced backend support."
+      "role": "user",
+      "message": "It helped me build the feature in half the time and reduced backend support."
     }
 ]
 
