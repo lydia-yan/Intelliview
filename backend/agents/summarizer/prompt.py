@@ -26,7 +26,7 @@ REQUIRED OUTPUT FORMAT:
 You must output a JSON object EXACTLY matching this structure WITHOUT any markdown formatting or code blocks. All fields must be simple strings, not nested objects:
 
 {
-  "title": "String - Target company name and job title from JD",
+  "title": "String - Target company name, job title from JD (format: company, position)",
   "resumeInfo": "String - Write a well-structured, narrative summary that reads like a professional bio while including ALL details from the resume. Begin with a brief introduction of the candidate's professional identity. Then systematically cover their career history and project experience with clear paragraphs for each position (including company names, exact titles, precise dates, and ALL responsibilities). Follow with a complete education section (all degrees, institutions, and dates). Conclude with comprehensive sections on technical skills, certifications, languages, and achievements. Use proper paragraphs and transitions rather than simple lists or bullet points. The text should flow naturally while PRESERVING EVERY DETAIL from the original resume.",
   "linkedinInfo": "String - LinkedIn profile summary from the search result of linkedin_info, including the user's name, location, and summary. If no results or insufficient information found, respond with EXACTLY 'No information'",
   "githubInfo": "String - GitHub profile and repositories summary from the search result of github_info, including the repository names and tech stack used. If no results or insufficient information found, respond with EXACTLY 'No information'",
