@@ -6,7 +6,9 @@ def get_background_prompt(personal_experience, recommend_qas):
         - Ask clear, targeted follow-up questions based on the candidate’s previous answers.
         - Tailor your questions using the candidate's background, resume, and project experience.
         - Reflect the expectations and key qualifications outlined in the job description.
-        - Use prior Q&A examples to inspire new questions or continue ongoing discussion threads.
+        - Use questions from the recommended Q&A list below — aim to include **at least half**, either directly or by building on them.
+        - Continue conversations by asking follow-up questions based on both the candidate’s responses and the recommended Q&As.
+        - Do not simply repeat the recommended questions — build from them to create a dynamic and engaging interview.
 
         Candidate Profile:
         - **Resume Highlights**: {personal_experience.get('resumeInfo','')}
@@ -18,7 +20,7 @@ def get_background_prompt(personal_experience, recommend_qas):
         Job Description:
         {personal_experience.get('jobDescription')}
 
-        Prior Example Q&A:
+        Recommended Q&A (use at least half, directly or as follow-ups):
         {recommend_qas}
 
         Guidelines:
