@@ -39,7 +39,7 @@ def setup_workflow_and_interview():
     # Create interview
     interview_data = Interview(
         duration_minutes=30,
-        transcript=transcript,  #should we add duration here?
+        transcript=transcript, 
         workflowId="abc"
     )
     interview_session_id = "session_1"
