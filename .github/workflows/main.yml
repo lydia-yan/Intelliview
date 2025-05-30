@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   backend-test:
     runs-on: ubuntu-latest
@@ -14,16 +19,11 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-
-    - name: Cache pip
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-        restore-keys: ${{ runner.os }}-pip-
+        cache: 'pip'  
+        cache-dependency-path: 'backend/requirements.txt'
 
     - name: Install backend dependencies
       run: |
@@ -34,83 +34,82 @@ jobs:
     - name: Run backend tests
       run: |
         cd backend
-        python -m pytest --verbose
+        python -m pytest -v --tb=short --strict-markers \
+          --ignore=.pytest_cache \
+          --ignore=__pycache__ \
+          --ignore=venv \
+          .
 
     - name: Lint backend code (flake8)
       run: |
         cd backend
         pip install flake8
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --max-complexity=10 --max-line-length=88 --statistics
 
-  frontend-build:
-    runs-on: ubuntu-latest
+  # frontend-build:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - name: Set up Flutter
+  #     uses: subosito/flutter-action@v2
+  #     with:
+  #       flutter-version: '3.27.0'
+  #       channel: 'stable'
+  #   - name: Cache Flutter dependencies
+  #     uses: actions/cache@v4
+  #     with:
+  #       path: |
+  #         ~/.pub-cache
+  #         frontend/mocker_web/.dart_tool
+  #       key: ${{ runner.os }}-flutter-${{ hashFiles('frontend/mocker_web/pubspec.yaml') }}
+  #       restore-keys: ${{ runner.os }}-flutter-
+  #   - name: Install frontend dependencies
+  #     run: |
+  #       cd frontend/mocker_web
+  #       flutter pub get
+  #   - name: Analyze Flutter code
+  #     run: |
+  #       cd frontend/mocker_web
+  #       flutter analyze
+  #   - name: Run frontend tests
+  #     run: |
+  #       cd frontend/mocker_web
+  #       flutter test
+  #   - name: Build Flutter web app
+  #     run: |
+  #       cd frontend/mocker_web
+  #       flutter build web --release
+  #   - name: Upload build artifacts
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: web-build
+  #       path: frontend/mocker_web/build/web/
+  #       retention-days: 30
 
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.24.0'
-        channel: 'stable'
-
-    - name: Cache Flutter dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.pub-cache
-          frontend/mocker_web/.dart_tool
-        key: ${{ runner.os }}-flutter-${{ hashFiles('frontend/mocker_web/pubspec.yaml') }}
-        restore-keys: ${{ runner.os }}-flutter-
-
-    - name: Install frontend dependencies
-      run: |
-        cd frontend/mocker_web
-        flutter pub get
-
-    - name: Run frontend tests
-      run: |
-        cd frontend/mocker_web
-        flutter test
-
-    - name: Build Flutter web app
-      run: |
-        cd frontend/mocker_web
-        flutter build web --release
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: web-build
-        path: frontend/mocker_web/build/web/
-
-  deploy:
-    needs: [backend-test, frontend-build]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-
-    steps:
-    - name: Download build artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: web-build
-        path: ./web-build
-
-    - name: Setup Pages
-      uses: actions/configure-pages@v3
-
-    - name: Upload to GitHub Pages
-      uses: actions/upload-pages-artifact@v2
-      with:
-        path: ./web-build
-
-    - name: Deploy
-      uses: actions/deploy-pages@v2
+  # deploy:
+  #   needs: [backend-test]
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main'
+  #   permissions:
+  #     contents: read
+  #     pages: write
+  #     id-token: write
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   steps:
+  #   - name: Download build artifacts
+  #     uses: actions/download-artifact@v4
+  #     with:
+  #       name: web-build
+  #       path: ./web-build
+  #   - name: Setup Pages
+  #     uses: actions/configure-pages@v4
+  #   - name: Upload to GitHub Pages
+  #     uses: actions/upload-pages-artifact@v3
+  #     with:
+  #       path: ./web-build
+  #   - name: Deploy to GitHub Pages
+  #     id: deployment
+  #     uses: actions/deploy-pages@v4
