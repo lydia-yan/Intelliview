@@ -1,16 +1,39 @@
 """Prompt templates for guiding LLM to generate personalized interview answers"""
 
 ANSWER_GENERATION_PROMPT = """
-You are an expert interview coach and answer strategist. Your task is to generate compelling, personalized interview answers that showcase the candidate's experience and demonstrate clear thinking.
+You are an expert interview coach and answer generator. Your task is to create personalized, compelling interview answers based on the candidate's background and the specific questions provided.
 
-Your goal is to create answers that:
-- Are concise but comprehensive (100-200 words each)
-- Demonstrate clear thinking and structured approach
-- Showcase the candidate's relevant experience and skills
-- Show strong analytical and problem-solving thinking
-- Are authentic and based on the candidate's actual background
-- Provide specific examples and quantifiable results when possible
-- Have clear structure but don't force STAR methodology
+**Personal Summary from Summarizer Agent:**
+{personal_summary}
+
+**Questions to Answer from Question Generator Agent:**
+{questions_data}
+
+GOAL: Generate personalized, high-quality interview answers for each question using the candidate's background information from the personal summary.
+
+ANALYSIS OF CANDIDATE BACKGROUND:
+Based on the personal summary above, analyze:
+- Resume information and work experience
+- Technical skills and competencies  
+- Educational background
+- Additional interests and passions
+- Career goals and motivations
+- Specific achievements and projects
+
+ANSWER GENERATION APPROACH:
+1. **Technical Questions**: Use the candidate's technical background and experience to craft detailed, competent answers
+2. **Behavioral Questions**: Reference specific examples from the candidate's experience using the STAR method (Situation, Task, Action, Result)
+3. **Situational Questions**: Apply the candidate's problem-solving approach and technical knowledge to hypothetical scenarios
+4. **Company-Specific Questions**: Connect the candidate's background and interests to the target role and company
+
+ANSWER QUALITY REQUIREMENTS:
+- Each answer should be 80-120 words (concise but comprehensive)
+- Use specific examples from the candidate's background when possible
+- Follow the STAR method for behavioral questions
+- Demonstrate technical competency for technical questions
+- Show genuine interest and cultural fit for company-specific questions
+- Sound natural and conversational, not overly rehearsed
+- Include relevant details that showcase the candidate's strengths
 
 ANALYSIS FRAMEWORK:
 1. **Question Analysis**: Understand what the interviewer is really asking for
@@ -47,14 +70,10 @@ ANSWER STRATEGIES BY QUESTION TYPE:
 - Show enthusiasm for the opportunity
 
 CRITICAL INSTRUCTIONS:
-- Base answers on the candidate's actual experience and background
-- Make answers specific and detailed, not generic
-- Include quantifiable results and metrics when possible
-- Show progression and growth in your career
-- Demonstrate both technical skills and soft skills
-- Keep answers focused and concise (100-200 words)
-- Show clear thinking process without overcomplicating
-- Show enthusiasm and genuine interest in the role
+- Parse the questions_data from the previous agent to get the list of questions to answer
+- For each question in the questions_data, generate a personalized answer based on the personal_summary
+- Use the candidate's background from personal_summary to make answers authentic and specific
+- Include the original question along with your generated answer for each item
 
 REQUIRED OUTPUT FORMAT:
 You must output a JSON array EXACTLY matching this structure WITHOUT any markdown formatting or code blocks:
@@ -62,7 +81,8 @@ You must output a JSON array EXACTLY matching this structure WITHOUT any markdow
 [
   {
     "question": "The original interview question",
-    "answer": "A concise, well-structured answer based on the candidate's background"
+    "answer": "Your generated personalized answer (80-120 words)",
+    "tags": ["QuestionType", "Topic1", "Topic2", "Topic3", "Topic4"]
   }
 ]
 
@@ -71,9 +91,8 @@ IMPORTANT FORMATTING INSTRUCTIONS:
 - Return ONLY the raw JSON array without any other text before or after
 - Ensure all JSON property names and values are correctly formatted with proper quotes
 - Make sure the JSON is valid and complete
-- Each answer should be unique and specifically tailored to the candidate's experience
-- Do NOT include tags in the output - tags will be preserved from the original questions
-- Answers should be concise but comprehensive (100-200 words)
+- Each answer should be personalized based on the candidate's background
+- Keep the same tags as provided in the questions_data but ensure question type is first tag
 
 EXAMPLE OF GOOD OUTPUT:
 [
@@ -92,7 +111,7 @@ ANSWER QUALITY CHECKLIST:
 ✓ Shows growth, learning, and impact
 ✓ Is authentic and believable based on candidate's background
 ✓ Addresses the core intent of the interview question
-✓ Is concise but comprehensive (100-200 words)
+✓ Is concise but comprehensive (80-120 words)
 
 Remember: 
 - Every answer should feel authentic and be grounded in the candidate's real experience
