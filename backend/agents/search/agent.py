@@ -28,7 +28,8 @@ SEARCH_AGENT = LlmAgent(
     name="interview_questions_searcher",
     description="Search for common interview questions and experiences for specific job positions",
     instruction=SEARCH_PROMPT,
-    tools=[google_search]
+    tools=[google_search],
+    output_key="industry_faqs"
 )
 
 def search_interview_questions(job_description):

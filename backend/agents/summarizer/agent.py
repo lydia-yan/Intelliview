@@ -27,7 +27,8 @@ SUMMARIZER_AGENT = LlmAgent(
     name="resume_summarizer",
     description="Summarize and organize user's resume and related information",
     instruction=SUMMARIZER_PROMPT,
-    tools=[google_search]
+    tools=[google_search],
+    output_key="personal_summary"
 )
 
 def summarize_resume(resume_text, linkedinLink, githubLink, portfolioLink, additionalInfo, job_description):

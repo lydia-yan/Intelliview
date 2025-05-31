@@ -28,8 +28,9 @@ QUESTION_GENERATOR_AGENT = LlmAgent(
     name="question_generator",
     description="Generate customized interview questions based on user background, industry FAQs, and general BQs",
     instruction=QUESTION_GENERATION_PROMPT,
-    tools=[]  # No tools needed - uses provided data from summarizer, search agents, and database
-)
+    tools=[],
+    output_key="questions_data"
+) 
 
 def generate_custom_questions(personal_summary, industry_faqs, num_questions=50):
     """
