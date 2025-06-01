@@ -39,7 +39,7 @@ class MockInterviewAgent(LlmAgent):
         )
         self.instruction = ""
 
-async def start_agent_session(session_id, user_id, workflow_id, duration_minutes=30,is_audio=False):
+async def start_agent_session(session_id, user_id, workflow_id, duration_minutes,is_audio=False):
     """Starts an agent session with a dynamic instruction prompt"""
     session = await session_service.create_session(
         app_name=APP_NAME,
@@ -79,13 +79,13 @@ async def start_agent_session(session_id, user_id, workflow_id, duration_minutes
     )
 
     # init the agent to start
-    message = "Please start the mock interview. Aks me to do a self introduction first."
+    message = "Please start the mock interview. Ask me to do a self introduction first."
     intro_content = Content(
         role="user",
         parts=[Part(text=message)]
     )
     live_request_queue.send_content(content=intro_content)
-    session.state["transcript"].append(("user", message))
+    session.state["transcript"].append({"role": "AI", "message": message})
 
     return live_events, live_request_queue, session
 
@@ -125,7 +125,7 @@ async def agent_to_client_messaging(websocket, live_events, session):
                     # Store full response in transcript when complete, if not already stored
                     if event.turn_complete and response_buffer:
                         full_response =response_buffer[-1].strip()
-                        session.state["transcript"].append(("agent", full_response))
+                        session.state["transcript"].append({"role": "AI", "message": full_response})
                     response_buffer.clear()  # Clear buffer
                     continue
 
@@ -146,7 +146,7 @@ async def agent_to_client_messaging(websocket, live_events, session):
                         }
                         await websocket.send_text(json.dumps(message))
                         print(f"[AGENT TO CLIENT]: audio/pcm: {len(audio_data)} bytes.")
-                        session.state["transcript"].append(("agent", "[audio data]"))
+                        session.state["transcript"].append({"role": "AI", "message": "[audio response sent]"})
                     continue
 
                 # Handle partial text response
@@ -181,7 +181,7 @@ async def client_to_agent_messaging(websocket, live_request_queue, session):
                 print(f"[CLIENT TO AGENT]: {data}")
 
                 # Record user message in session transcript
-                session.state["transcript"].append(("user", data))
+                session.state["transcript"].append({"role": "user", "message": data})
 
             elif mime_type == "audio/pcm":
                 # Decode audio and send to agent
@@ -190,7 +190,7 @@ async def client_to_agent_messaging(websocket, live_request_queue, session):
                 print(f"[CLIENT TO AGENT]: [audio data] {len(decoded_data)} bytes")
 
                 # Record audio event in transcript
-                session.state["transcript"].append(("user", "[audio data]"))
+                session.state["transcript"].append({"role": "user", "message": "[audio message]"})
             else:
                 raise ValueError(f"Mime type not supported: {mime_type}")
     except Exception as e:
@@ -198,7 +198,7 @@ async def client_to_agent_messaging(websocket, live_request_queue, session):
 
 def is_session_expired(session):
     start = session.state.get("start_time")
-    duration = session.state.get("duration_minutes", 10)
+    duration = session.state.get("duration_minutes")
     if not start:
         return False
     return datetime.now(timezone.utc) > start + timedelta(minutes=duration)
@@ -208,11 +208,9 @@ def setup_duration(session, duration_minutes: int):
     session.state["start_time"] = datetime.now(timezone.utc)
     session.state["duration_minutes"] = duration_minutes
 
-# n
 def save_transcript(session):
 
-    transcript_raw = session.state.get("transcript", [])
-    transcript = [{"role": role, "message": msg} for role, msg in transcript_raw]
+    transcript = session.state.get("transcript", [])
     workflowId= session.state.get("workflow_id")
 
 
