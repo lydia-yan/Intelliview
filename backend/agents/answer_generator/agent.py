@@ -29,7 +29,8 @@ ANSWER_GENERATOR_AGENT = LlmAgent(
     name="answer_generator",
     description="Generate personalized interview answers using clear thinking",
     instruction=ANSWER_GENERATION_PROMPT,
-    tools=[]  # No tools needed - uses provided data from question_generator and personal background
+    tools=[],
+    output_key="answers_data"
 )
 
 def generate_and_save_personalized_answers(questions_data, personal_summary, user_id, workflow_id):
