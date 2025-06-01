@@ -104,6 +104,14 @@ async def agent_to_client_messaging(websocket, live_events, session):
                     "data": "⏰ Time's up! Thank you for participating in the mock interview. We'll save your transcript now."
                 }
                 await websocket.send_text(json.dumps(goodbye_message))
+                
+                end_message = {
+                    "type": "end",
+                    "data": "Conversation ended. Thank you for participating!"
+                }
+                await websocket.send_text(json.dumps(end_message))
+                print("[AGENT TO CLIENT]: Final end message sent.")
+
                 start_time  = session.state.get("start_time")
                 end_time = datetime.now(timezone.utc)
                 duration = int((end_time - start_time).total_seconds() / 60)
