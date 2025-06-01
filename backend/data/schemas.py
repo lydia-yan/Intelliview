@@ -4,7 +4,7 @@ from typing import List, Dict, Optional, Any
 
 # Profile Schema
 class Profile(BaseModel):
-    name: str
+    name: str = None
     email: EmailStr = None
     photoURL: HttpUrl = None
     linkedinLink: HttpUrl = None

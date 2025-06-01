@@ -1,35 +1,13 @@
-from backend.data.schemas import (
-    Profile, Interview, Workflow, Feedback,
-    PersonalExperience, RecommendedQA, TranscriptTurn, GeneralBQ
-)
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 from pydantic import HttpUrl, EmailStr
-import os
-from dotenv import load_dotenv 
-import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import firestore
 
-load_dotenv()
-
-# Resolve the path to the Firebase key relative to the backend/ directory
-backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/
-firebase_key_path = os.getenv("FIREBASE_KEY_PATH")
-if not firebase_key_path:
-    raise ValueError("FIREBASE_KEY_PATH environment variable not set")
-
-# Construct the absolute path to the Firebase key
-firebase_key = os.path.join(backend_dir, firebase_key_path)
-if not os.path.exists(firebase_key):
-    raise FileNotFoundError(f"Firebase key file not found at {firebase_key}")
-
-# Initialize Firebase (only if not already initialized)
-if not firebase_admin._apps:
-    cred = credentials.Certificate(firebase_key)
-    firebase_admin.initialize_app(cred)
-
-# Get Firestore client
-db = firestore.client()
+from backend.data.schemas import (
+    Profile, Interview, Workflow, Feedback,
+    PersonalExperience, RecommendedQA, GeneralBQ
+)
+from backend.tools.firebase_config import db
 
 class FirestoreDB:
     def __init__(self,db):
@@ -52,12 +30,11 @@ class FirestoreDB:
                 profile_dict[key] = str(value)
 
         user_ref.set(profile_dict, merge=True)  # Store fields at root of the user doc
-        updated_doc = user_ref.get()
-        if updated_doc.exists:
-            return {
-                "message": f"Profile for user {user_id} created/updated successfully",
-                "data": None
-            }
+        return {
+            "message": f"Profile for user {user_id} created/updated successfully",
+            "data": profile_dict
+        }
+
 
     def get_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
         doc_ref = self.db.collection('users').document(user_id)
