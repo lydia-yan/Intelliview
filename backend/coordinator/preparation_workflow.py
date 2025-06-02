@@ -174,6 +174,18 @@ async def run_preparation_workflow(
         
         workflow_id = session_id  # session_id serves as workflow_id
         
+        # Process GitHub URL if provided
+        github_analysis_result = ""
+        if github_link and github_link.strip():
+            try:
+                from backend.services.github import GitHubAnalyzer
+                github_analyzer = GitHubAnalyzer()
+                github_analysis_result = github_analyzer.get_github_summary_for_workflow(github_link)
+                print(f"GitHub analysis completed: {len(github_analysis_result)} characters")
+            except Exception as e:
+                print(f"Warning: GitHub analysis failed: {e}")
+                github_analysis_result = f"GitHub analysis failed for: {github_link}"
+        
         # Create workflow with unique name and fresh agents to avoid conflicts
         workflow_name = f"interview_preparation_workflow_{session_id}"
         preparation_workflow = create_preparation_workflow(workflow_name)
@@ -204,8 +216,8 @@ async def run_preparation_workflow(
         ## LinkedIn URL (SEARCH THIS EXACT URL)
         {linkedin_link}
         
-        ## GitHub URL (SEARCH THIS EXACT URL)  
-        {github_link}
+        ## GitHub Analysis Result (Detailed profile information extracted from GitHub)
+        {github_analysis_result}
         
         ## Portfolio URL (SEARCH THIS EXACT URL)
         {portfolio_link}
