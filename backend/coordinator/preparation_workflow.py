@@ -15,25 +15,23 @@ from typing import Optional
 # Add the project root to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from google.adk.agents import SequentialAgent
+from google.adk.agents import SequentialAgent, LlmAgent
 from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
+from google.adk.tools import google_search
 from google.genai import types
 
 # Import config
 from backend.config import set_google_cloud_env_vars
 
-# Import agents
-from backend.agents.summarizer.agent import SUMMARIZER_AGENT
-from backend.agents.search.agent import SEARCH_AGENT
-from backend.agents.question_generator.agent import QUESTION_GENERATOR_AGENT
-from backend.agents.answer_generator.agent import ANSWER_GENERATOR_AGENT
+# Import prompts
+from backend.agents.summarizer.prompt import SUMMARIZER_PROMPT
+from backend.agents.search.prompt import SEARCH_PROMPT
+from backend.agents.question_generator.prompt import QUESTION_GENERATION_PROMPT
+from backend.agents.answer_generator.prompt import ANSWER_GENERATION_PROMPT
 
 # Load environment variables
 set_google_cloud_env_vars()
-
-# Global session service for workflow
-_session_service = InMemorySessionService()
 
 def generate_session_id(input_data: str = ""):
     """Generate a random session ID similar to Firestore document IDs"""
@@ -81,16 +79,58 @@ def extract_json_from_response(response_text: str) -> dict:
                 "raw_response": response_text
             }
 
-def create_preparation_workflow():
-    """Create and configure the SequentialAgent workflow"""
+def create_fresh_agents():
+    """Create fresh agent instances to avoid parent workflow conflicts"""
+    summarizer_agent = LlmAgent(
+        model="gemini-2.0-flash", 
+        name="resume_summarizer",
+        description="Summarize and organize user's resume and related information",
+        instruction=SUMMARIZER_PROMPT,
+        tools=[google_search],
+        output_key="personal_summary"
+    )
+    
+    search_agent = LlmAgent(
+        model="gemini-2.0-flash", 
+        name="interview_questions_searcher",
+        description="Search for common interview questions and experiences for specific job positions",
+        instruction=SEARCH_PROMPT,
+        tools=[google_search],
+        output_key="industry_faqs"
+    )
+    
+    question_generator_agent = LlmAgent(
+        model="gemini-2.0-flash", 
+        name="question_generator",
+        description="Generate customized interview questions based on user background, industry FAQs, and general BQs",
+        instruction=QUESTION_GENERATION_PROMPT,
+        tools=[],
+        output_key="questions_data"
+    )
+    
+    answer_generator_agent = LlmAgent(
+        model="gemini-2.0-flash", 
+        name="answer_generator",
+        description="Generate personalized interview answers using clear thinking",
+        instruction=ANSWER_GENERATION_PROMPT,
+        tools=[],
+        output_key="answers_data"
+    )
+    
+    return summarizer_agent, search_agent, question_generator_agent, answer_generator_agent
+
+def create_preparation_workflow(workflow_name: str):
+    """Create and configure the SequentialAgent workflow with unique name and fresh agents"""
+    summarizer_agent, search_agent, question_generator_agent, answer_generator_agent = create_fresh_agents()
+    
     return SequentialAgent(
         sub_agents=[
-            SUMMARIZER_AGENT,
-            SEARCH_AGENT,
-            QUESTION_GENERATOR_AGENT,
-            ANSWER_GENERATOR_AGENT
+            summarizer_agent,
+            search_agent,
+            question_generator_agent,
+            answer_generator_agent
         ],
-        name="interview_preparation_workflow",
+        name=workflow_name,
         description="Interview preparation workflow including resume summarizer, search, question generator, and answer generator."
     )
 
@@ -123,6 +163,9 @@ async def run_preparation_workflow(
     Returns:
         dict: Result with workflow completion status, generated session_id, and any errors
     """
+    # Create fresh session service for each workflow to avoid state conflicts
+    session_service = InMemorySessionService()
+    
     try:
         # Auto-generate session_id if not provided
         if not session_id:
@@ -131,18 +174,19 @@ async def run_preparation_workflow(
         
         workflow_id = session_id  # session_id serves as workflow_id
         
-        # Create workflow
-        preparation_workflow = create_preparation_workflow()
+        # Create workflow with unique name and fresh agents to avoid conflicts
+        workflow_name = f"interview_preparation_workflow_{session_id}"
+        preparation_workflow = create_preparation_workflow(workflow_name)
         
-        # Create runner
+        # Create runner with fresh session service
         runner = Runner(
             agent=preparation_workflow,
             app_name="interview_preparation_app",
-            session_service=_session_service
+            session_service=session_service
         )
         
         # Create session
-        await _session_service.create_session(
+        await session_service.create_session(
             app_name="interview_preparation_app",
             user_id=user_id,
             session_id=session_id
@@ -212,7 +256,7 @@ async def run_preparation_workflow(
         print(f"Completed agents: {completed_agents}")
         
         # Get final session state
-        session = await _session_service.get_session(
+        session = await session_service.get_session(
             app_name="interview_preparation_app",
             user_id=user_id,
             session_id=session_id
