@@ -45,3 +45,8 @@ typing-inspection==0.4.1
 typing_extensions==4.13.2
 uritemplate==4.1.1
 urllib3==2.4.0
+pymupdf>=1.23.0
+aiofiles>=23.0.0
+fastapi>=0.100.0
+uvicorn>=0.20.0
+python-multipart>=0.0.6
