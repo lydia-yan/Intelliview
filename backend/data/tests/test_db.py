@@ -22,7 +22,7 @@ def setup_workflow_and_interview():
     workflow_session_id = "workflow_session"
     workflow_title = personalExperience["title"]
     experience_data = {k: v for k, v in personalExperience.items() if k != "title"}
-
+    workflow_session_id = "workflow_session"
     # Create workflow using the extracted title
     workflow_data = Workflow(title=workflow_title)  #title include the position and company name
     workflow_result = database.firestore_db.create_or_update_workflow(TEST_USER_ID, workflow_session_id, workflow_data)
@@ -76,7 +76,6 @@ def test_set_recommended_qas(setup_workflow_and_interview):
     assert retrieved["data"][0]["question"] == qas[0].question
 
 # ------------------ Test Transcript ------------------
-
 def test_set_transcript(setup_workflow_and_interview):
     user_id, workflow_id, interview_id = setup_workflow_and_interview
     turns = [TranscriptTurn(**t) for t in transcript]
