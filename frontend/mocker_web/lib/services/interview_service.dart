@@ -20,6 +20,10 @@ class InterviewService {
   Function()? _onDisconnected;
   Function(String)? _onError;
 
+  // Store current streaming message part
+  String _currentStreamingMessage = '';
+  String _currentMessageId = '';
+
   // get current user token
   Future<String?> _getIdToken() async {
     try {
@@ -50,16 +54,22 @@ class InterviewService {
       if (request.additionalInfo != null) multipart.fields['additional_info'] = request.additionalInfo!;
       if (request.numQuestions != null) multipart.fields['num_questions'] = request.numQuestions.toString();
       if (request.sessionId != null) multipart.fields['session_id'] = request.sessionId!;
-      if (request.resumeFile.path != null) {
-        multipart.files.add(await http.MultipartFile.fromPath('file', request.resumeFile.path!));
-      } else if (request.resumeFile.bytes != null) {
+      
+      // use bytes property
+      if (request.resumeFile.bytes != null) {
         multipart.files.add(http.MultipartFile.fromBytes(
           'file',
           request.resumeFile.bytes!,
           filename: request.resumeFile.name,
           contentType: MediaType('application', 'pdf'),
         ));
+      } else if (request.resumeFile.path != null && !kIsWeb) {
+        // only use path in non-Web environment
+        multipart.files.add(await http.MultipartFile.fromPath('file', request.resumeFile.path!));
+      } else {
+        throw Exception('Resume file has no accessible content');
       }
+      
       final streamed = await multipart.send();
       final respStr = await streamed.stream.bytesToString();
       final respJson = json.decode(respStr);
@@ -120,17 +130,17 @@ class InterviewService {
   }
 
   // Get interview feedback
-  Future<Map<String, dynamic>> getInterviewFeedback(String sessionId) async {
+  Future<Map<String, dynamic>> getInterviewFeedback(String workflowId, String sessionId) async {
     try {
       final token = await _getIdToken();
       if (token == null) {
         throw Exception('No authentication token available');
       }
 
-      debugPrint('Calling GET /interviews/$sessionId/feedback API...');
+      debugPrint('Calling POST /interviews/$workflowId/$sessionId/feedback API...');
       
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.interviewFeedbackEndpoint(sessionId)}'),
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.interviewFeedbackEndpoint(workflowId, sessionId)}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -160,7 +170,7 @@ class InterviewService {
     }
   }
 
-  // Get interview history for a workflow (or all interviews if workflowId is 'all')
+  // Get interview history for a workflow
   Future<List<Map<String, dynamic>>> getInterviewHistory(String workflowId) async {
     try {
       final token = await _getIdToken();
@@ -168,14 +178,8 @@ class InterviewService {
         throw Exception('No authentication token available');
       }
 
-      String apiUrl;
-      if (workflowId == 'all') {
-        apiUrl = '${ApiConfig.baseUrl}/interviews/history';
-        debugPrint('Calling GET /interviews/history API...');
-      } else {
-        apiUrl = '${ApiConfig.baseUrl}${ApiConfig.workflowInterviewsEndpoint(workflowId)}';
+      final apiUrl = '${ApiConfig.baseUrl}${ApiConfig.workflowInterviewsEndpoint(workflowId)}';
         debugPrint('Calling GET /workflows/$workflowId/interviews API...');
-      }
       
       final response = await http.get(
         Uri.parse(apiUrl),
@@ -198,19 +202,13 @@ class InterviewService {
       debugPrint('🔄 Falling back to mock data...');
       
       try {
-        // Fallback to mock data
         await Future.delayed(const Duration(milliseconds: 600));
         
-        if (workflowId == 'all') {
-          debugPrint('✅ Mock API: All interview history loaded with mock data (${MockData.interviewHistory.length} items)');
-          return MockData.interviewHistory;
-        } else {
           final filteredHistory = MockData.interviewHistory
               .where((interview) => interview['workflowId'] == workflowId)
               .toList();
           debugPrint('✅ Mock API: Interview history loaded with mock data (${filteredHistory.length} items)');
           return filteredHistory;
-        }
       } catch (mockError) {
         debugPrint('❌ Mock data also failed: $mockError');
         throw Exception('Failed to get interview history: Real API failed ($e), Mock data also failed ($mockError)');
@@ -231,6 +229,34 @@ class InterviewService {
         (message) {
           try {
             final data = json.decode(message);
+            
+            // only keep the latest text/plain content
+            if (data.containsKey('mime_type') && data['mime_type'] == 'text/plain') {
+              _currentStreamingMessage = data['data'] ?? '';
+              if (_currentMessageId.isEmpty) {
+                _currentMessageId = DateTime.now().millisecondsSinceEpoch.toString();
+              }
+              return;
+            }
+            
+            // render the latest text/plain content when turn_complete
+            if (data.containsKey('turn_complete') && data['turn_complete'] == true) {
+              if (_currentStreamingMessage.isNotEmpty) {
+                final chatMessage = ChatMessage(
+                  id: _currentMessageId,
+                  role: 'ai',
+                  content: _currentStreamingMessage,
+                  timestamp: DateTime.now(),
+                );
+                _onMessageReceived?.call(chatMessage);
+                _currentStreamingMessage = '';
+                _currentMessageId = '';
+              }
+              return;
+            }
+            
+            // Handle other types of messages (like status updates)
+            if (data.containsKey('messageId') || data.containsKey('role')) {
             final chatMessage = ChatMessage(
               id: data['messageId'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
               role: data['role'] ?? 'ai',
@@ -238,7 +264,9 @@ class InterviewService {
               timestamp: DateTime.tryParse(data['createAt'] ?? '') ?? DateTime.now(),
             );
             _onMessageReceived?.call(chatMessage);
+            }
           } catch (e) {
+            // Fallback: treat as plain text message
             final chatMessage = ChatMessage(
               id: DateTime.now().millisecondsSinceEpoch.toString(),
               role: 'ai',
@@ -269,7 +297,12 @@ class InterviewService {
   // send message to WebSocket
   void sendMessage(String message) {
     if (_wsConnected && _channel != null) {
-      _channel!.sink.add(message);
+      // Send message in the correct format expected by backend
+      final messageData = {
+        'mime_type': 'text/plain',
+        'data': message,
+      };
+      _channel!.sink.add(json.encode(messageData));
       debugPrint('📤 Message sent via WebSocket: $message');
     } else {
       throw Exception('WebSocket not connected');
@@ -279,7 +312,11 @@ class InterviewService {
   // disconnect WebSocket connection
   void disconnectWebSocket() {
     if (_channel != null) {
-      _channel!.sink.close(ws_status.goingAway);
+      if (kIsWeb) {
+        _channel!.sink.close();
+      } else {
+        _channel!.sink.close(1000);
+      }
       _channel = null;
     }
     _wsConnected = false;
