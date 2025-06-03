@@ -16,15 +16,14 @@ set_google_cloud_env_vars()
 
 from google.adk.agents import LlmAgent
 from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
 from google.genai import types
 from .prompt import get_interview_judge_input_data, get_interview_judge_instruction
 from backend.data.database import firestore_db
 from backend.data.schemas import Feedback
 from pydantic import ValidationError
+from backend.coordinator.session_manager import session_service
 
 
-session_service = InMemorySessionService() #might remove by using get_session_service with the interview agent
 
 INTERVIEW_JUDGE_AGENT = LlmAgent(
     model="gemini-2.0-flash", 
@@ -33,7 +32,7 @@ INTERVIEW_JUDGE_AGENT = LlmAgent(
     instruction=get_interview_judge_instruction()
 )
 
-def run_judge_from_session(session_service, session):
+def run_judge_from_session(session):
     """
     Evaluate an interview by running the InterviewJudgeAgent using an existing session.
 
@@ -44,13 +43,11 @@ def run_judge_from_session(session_service, session):
     Returns:
         dict: JSON feedback from the judge agent.
     """
-    return asyncio.run(_run_judge_from_session(session_service, session))
+    return asyncio.run(_run_judge_from_session(session))
 
 
-async def _run_judge_from_session(session_service, session):
+async def _run_judge_from_session(session):
     # each session has its own agent
-
-
     runner = Runner(
         agent=INTERVIEW_JUDGE_AGENT,
         app_name=session.app_name,
@@ -70,28 +67,41 @@ async def _run_judge_from_session(session_service, session):
     )
 
     response_text = None
-    async for event in runner.run_async(
-        user_id=session.user_id,
-        session_id=session.id,
-        new_message=content 
-    ):
-        if event.is_final_response():
-            response_text = event.content.parts[0].text
-            break
+    feedback_json = None
+    try: 
+        async for event in runner.run_async(
+            user_id=session.user_id,
+            session_id=session.id,
+            new_message=content 
+        ):
+            if event.is_final_response():
+                response_text = event.content.parts[0].text
+                break
 
-    result = parse_and_validate_feedback(response_text)
-    if result["status"] == "valid":
-        feedback_json = result["data"]
-        print("[DEBUG] Feedback is valid")
-        result = save_feedback_to_db(session,feedback_json)
-        if result["message"]: 
-            print("[DEBUG] Feedback stored.")
+        print("[DEBUG] Raw Feedback Agent Response:")
+        print(response_text)
+
+        result = parse_and_validate_feedback(response_text)
+        if result["status"] == "valid":
+            feedback_json = result["data"]
+            print("[DEBUG] Feedback is valid")
+            result = save_feedback_to_db(session,feedback_json)
+            if result["message"]: 
+                print("[DEBUG] Feedback stored.")
+        else:
+            print("[ERROR] Feedback invalid or could not be parsed:")
+            print(result)
         return feedback_json
-    else:
-        print("[ERROR] Feedback invalid or could not be parsed:")
-        print(result)
-
-    save_feedback_to_db(session,feedback_json)
+    finally:
+        try: 
+            await session_service.delete_session(
+                app_name=session.app_name,
+                user_id=session.user_id,
+                session_id=session.id
+            )
+            print(f"[CLEANUP]: Session {session.id} successfully closed.")
+        except Exception as e:
+            print(f"[CLEANUP ERROR]: Failed to close session {session.id}: {e}")
 
 def parse_and_validate_feedback(response_text):
     """Extracts and validates feedback JSON from agent response."""
@@ -124,5 +134,5 @@ def save_feedback_to_db(session, validated):
         feedback (Feedback): Validated Feedback object (Pydantic).
     """
     
-    return firestore_db.set_feedback(session.user_id, session.id, Feedback(**validated))
+    return firestore_db.set_feedback(session.user_id, session.state.get("workflow_id"), session.id, Feedback(**validated))
 

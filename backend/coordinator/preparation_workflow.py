@@ -16,7 +16,6 @@ from typing import Optional
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from google.adk.agents import SequentialAgent, LlmAgent
-from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
 from google.adk.tools import google_search
 from google.genai import types
@@ -29,6 +28,8 @@ from backend.agents.summarizer.prompt import SUMMARIZER_PROMPT
 from backend.agents.search.prompt import SEARCH_PROMPT
 from backend.agents.question_generator.prompt import QUESTION_GENERATION_PROMPT
 from backend.agents.answer_generator.prompt import ANSWER_GENERATION_PROMPT
+from backend.coordinator.session_manager import session_service
+
 
 # Load environment variables
 set_google_cloud_env_vars()
@@ -164,7 +165,6 @@ async def run_preparation_workflow(
         dict: Result with workflow completion status, generated session_id, and any errors
     """
     # Create fresh session service for each workflow to avoid state conflicts
-    session_service = InMemorySessionService()
     
     try:
         # Auto-generate session_id if not provided
@@ -255,9 +255,10 @@ async def run_preparation_workflow(
         print(f"Total events: {event_count}")
         print(f"Completed agents: {completed_agents}")
         
+        app_name = "interview_preparation_app"
         # Get final session state
         session = await session_service.get_session(
-            app_name="interview_preparation_app",
+            app_name=app_name,
             user_id=user_id,
             session_id=session_id
         )
@@ -300,6 +301,16 @@ async def run_preparation_workflow(
             "session_id": session_id,
             "workflow_id": workflow_id
         }
+    finally:
+        try:
+            await session_service.delete_session(
+                app_name=app_name,
+                user_id=session.user_id,
+                session_id=session_id
+            )
+            print(f"[CLEANUP]: Session {session.id} successfully closed.")
+        except Exception as e:
+            print(f"[CLEANUP ERROR]: Failed to close session {session.id}: {e}")
 
 async def _save_workflow_results_to_database(user_id, session_id, session_state_updates):
     """Save workflow results to database without re-executing agent logic"""
