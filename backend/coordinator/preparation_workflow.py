@@ -86,7 +86,7 @@ def create_fresh_agents():
         name="resume_summarizer",
         description="Summarize and organize user's resume and related information",
         instruction=SUMMARIZER_PROMPT,
-        tools=[google_search],
+        tools=[],
         output_key="personal_summary"
     )
     
@@ -184,7 +184,17 @@ async def run_preparation_workflow(
                 print(f"GitHub analysis completed: {len(github_analysis_result)} characters")
             except Exception as e:
                 print(f"Warning: GitHub analysis failed: {e}")
-                github_analysis_result = f"GitHub analysis failed for: {github_link}"
+        
+        # Analyze portfolio URL if provided
+        portfolio_content = ""
+        if portfolio_link and portfolio_link.strip():
+            try:
+                from backend.services.portfolio.portfolio_analyzer import analyze_portfolio_url
+                portfolio_content = await analyze_portfolio_url(portfolio_link.strip())
+                print(f"Portfolio analysis completed. Content length: {len(portfolio_content)}")
+            except Exception as e:
+                print(f"Portfolio analysis failed for URL {portfolio_link}: {e}")
+        
         
         # Create workflow with unique name and fresh agents to avoid conflicts
         workflow_name = f"interview_preparation_workflow_{session_id}"
@@ -213,14 +223,14 @@ async def run_preparation_workflow(
         ## Resume Content
         {resume_text}
         
-        ## LinkedIn URL (SEARCH THIS EXACT URL)
+        ## LinkedIn URL
         {linkedin_link}
         
-        ## GitHub Analysis Result (Detailed profile information extracted from GitHub)
+        ## GitHub Analysis Result
         {github_analysis_result}
         
-        ## Portfolio URL (SEARCH THIS EXACT URL)
-        {portfolio_link}
+        ## Portfolio Content
+        {portfolio_content}
         
         ## Additional Information
         {additional_info}
