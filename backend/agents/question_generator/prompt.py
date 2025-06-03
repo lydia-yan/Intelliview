@@ -75,16 +75,46 @@ You must output a JSON array EXACTLY matching this structure WITHOUT any markdow
   {
     "question": "Concise, clear interview question",
     "answer": "",
-    "tags": ["QuestionType", "Topic1", "Topic2", "Topic3", "Topic4"]
+    "tags": ["QuestionType", "CoreSkill", "DifficultyLevel"]
   }
 ]
 
-TAG REQUIREMENTS:
-- Maximum 5 tags per question
-- First tag MUST be the question type: "Technical", "Behavioral", "Situational", or "CompanySpecific"
-- Remaining tags should describe relevant topics, skills, or concepts
-- Use specific, relevant tags (e.g., "API Design", "Problem Solving", "Leadership", "Database")
-- Do NOT use generic tags like "commonly asked"
+## 🏷️ SYSTEMATIC 3-TAG REQUIREMENT:
+
+Each question MUST have exactly 3 tags following this logical structure:
+
+**TAG 1 - Question Type (MANDATORY)**:
+- "Technical" - Technical skills, knowledge, or problem-solving
+- "Behavioral" - Past experiences, soft skills, teamwork
+- "Situational" - Hypothetical scenarios, decision-making
+- "CompanySpecific" - Role understanding, motivation, company fit
+
+**TAG 2 - Core Skill/Domain (MANDATORY)**:
+Choose the most relevant skill or domain area for the question:
+
+For Technical Roles: "Programming", "SystemDesign", "Database", "Security", "DevOps", "Testing", "Architecture", "API", "Frontend", "Backend", "Mobile", "DataScience", "ArtificialIntelligence", "CloudComputing", "Networking"
+
+For Business Roles: "Strategy", "Analytics", "Marketing", "Sales", "Finance", "Operations", "ProjectManagement", "ProductManagement", "BusinessDevelopment", "Consulting", "Leadership"
+
+For Creative Roles: "Design", "UXResearch", "Branding", "ContentCreation", "VisualDesign", "UserExperience", "CreativeStrategy", "ArtDirection"
+
+For Other Industries: "Healthcare", "Education", "Legal", "Engineering", "Research", "Manufacturing", "Retail", "Hospitality", "NonProfit", "Government"
+
+**TAG 3 - Experience Level (MANDATORY)**:
+- "Entry" - Entry-level, junior positions (0-2 years)
+- "Mid" - Mid-level positions (2-5 years)
+- "Senior" - Senior positions (5+ years)
+
+## TAG SELECTION LOGIC:
+
+1. **Question Type**: Analyze the question content to determine if it's testing technical knowledge, behavioral patterns, situational judgment, or company fit.
+
+2. **Core Skill/Domain**: Identify the primary skill, technology, or domain knowledge being assessed. Choose the most specific relevant tag from the lists above.
+
+3. **Experience Level**: Consider the complexity and expectation level of the question:
+   - Entry: Basic concepts, foundational knowledge, simple scenarios
+   - Mid: Intermediate complexity, some experience assumed, moderate challenges
+   - Senior: Advanced concepts, leadership scenarios, complex problem-solving
 
 ## 🚨 FINAL QUALITY CONTROL CHECKLIST 🚨
 
@@ -93,8 +123,9 @@ Before submitting your response, verify:
 ✅ Did I generate exactly that many questions?
 ✅ Did I count my questions to confirm the exact number?
 ✅ Is my JSON properly formatted without markdown blocks?
-✅ Does each question have exactly 5 tags with the first being the question type?
+✅ Does each question have exactly 3 tags following the systematic structure?
 ✅ Are all "answer" fields set to empty strings?
+✅ Are all tags selected from the predefined categories above?
 
 IMPORTANT FORMATTING INSTRUCTIONS:
 - Do NOT wrap the JSON in markdown code blocks (do not use ```json or ``` tags)
@@ -110,22 +141,22 @@ EXAMPLE OF GOOD OUTPUT:
   {
     "question": "How would you design a scalable API system for high-traffic applications?",
     "answer": "",
-    "tags": ["Technical", "API Design", "Scalability", "System Architecture", "Backend"]
+    "tags": ["Technical", "SystemDesign", "Senior"]
   },
   {
     "question": "Tell me about a time you had to learn a new technology quickly to solve a problem.",
     "answer": "",
-    "tags": ["Behavioral", "Learning Agility", "Problem Solving", "Adaptability", "Growth Mindset"]
+    "tags": ["Behavioral", "Programming", "Mid"]
   },
   {
     "question": "If you discovered a critical security vulnerability in production, how would you handle it?",
     "answer": "",
-    "tags": ["Situational", "Security", "Crisis Management", "Decision Making", "Risk Assessment"]
+    "tags": ["Situational", "Security", "Senior"]
   },
   {
     "question": "Why are you interested in this specific role and what do you hope to achieve?",
     "answer": "",
-    "tags": ["CompanySpecific", "Motivation", "Career Goals", "Role Understanding", "Fit"]
+    "tags": ["CompanySpecific", "Leadership", "Entry"]
   }
 ]
 
@@ -135,7 +166,7 @@ EXAMPLE OF GOOD OUTPUT:
 - Include appropriate mix of Technical, Behavioral, Situational, and CompanySpecific questions
 - Keep questions concise but comprehensive
 - Ensure questions allow for clear, focused answers
-- Use specific, relevant tags with question type as first tag
-- Maximum 5 tags per question
+- Use exactly 3 tags per question following the systematic structure
+- Select tags from the predefined categories to ensure consistency and usefulness
 - 🚨 **GENERATE EXACTLY THE NUMBER OF QUESTIONS SPECIFIED IN THE PERSONAL SUMMARY** 🚨
 """
