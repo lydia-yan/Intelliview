@@ -14,12 +14,12 @@ docstring_parser==0.16
 email_validator==2.2.0
 fastapi==0.115.12
 firebase-admin==6.8.0
-google-adk==1.0.0
+google-adk==1.1.1
 google-api-core==2.24.2
 google-api-python-client==2.170.0
 google-auth==2.40.2
 google-auth-httplib2==0.2.0
-google-cloud-aiplatform==1.94.0
+google-cloud-aiplatform==1.95.1
 google-cloud-bigquery==3.33.0
 google-cloud-core==2.4.3
 google-cloud-firestore==2.20.2
@@ -29,7 +29,7 @@ google-cloud-speech==2.32.0
 google-cloud-storage==2.19.0
 google-cloud-trace==1.16.1
 google-crc32c==1.7.1
-google-genai==1.16.1
+google-genai==1.18.0
 google-resumable-media==2.7.2
 googleapis-common-protos==1.70.0
 graphviz==0.20.3
@@ -42,7 +42,7 @@ httplib2==0.22.0
 httpx==0.28.1
 httpx-sse==0.4.0
 idna==3.10
-importlib_metadata==8.6.1
+importlib_metadata==6.8.0
 iniconfig==2.1.0
 mcp==1.9.1
 msgpack==1.1.0

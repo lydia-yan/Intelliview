@@ -331,8 +331,15 @@ async def _save_workflow_results_to_database(user_id, session_id, session_state_
         personal_summary = session_state_updates.get("personal_summary", {})
         if personal_summary and isinstance(personal_summary, dict) and "error" not in personal_summary:
             try:
-                from backend.data.schemas import PersonalExperience
+                from backend.data.schemas import PersonalExperience, Workflow
                 from backend.data.database import firestore_db
+                
+                # get title
+                title = personal_summary.get("title", "")
+                if title:
+                    workflow_data = Workflow(title=title)
+                    firestore_db.create_or_update_workflow(user_id, session_id, workflow_data)
+                    print(f"Saved workflow title '{title}' to database for user {user_id}, workflow {session_id}")
                 
                 # Convert to PersonalExperience object for database storage
                 personal_experience = PersonalExperience(

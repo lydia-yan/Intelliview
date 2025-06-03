@@ -6,6 +6,7 @@ import '../services/interview_service.dart';
 import '../widgets/navbar.dart';
 import '../theme/app_theme.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 
 // interview state enum
@@ -38,6 +39,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   // Interview state
   List<ChatMessage> _messages = [];
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool _sending = false;
   bool _loadingChat = false;
   String? _sessionId;
@@ -47,6 +49,13 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   Map<String, dynamic>? _feedbackData;
   bool _loadingFeedback = false;
   String? _feedbackError;
+  bool _feedbackRequested = false;
+  
+  // Polling state
+  Timer? _feedbackPollingTimer;
+  int _pollingAttempts = 0;
+  static const int _maxPollingAttempts = 30; 
+  static const Duration _pollingInterval = Duration(seconds: 2);
 
   @override
   void initState() {
@@ -104,12 +113,16 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
           setState(() {
             _messages.add(message);
           });
+          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
         },
-        onDisconnected: () {
+        onDisconnected: () async {
           setState(() => _wsConnected = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('WebSocket disconnected.')),
-          );
+          if (_feedbackRequested) return;
+          _feedbackRequested = true;
+          if (_sessionId != null && _selectedWorkflow != null) {
+            setState(() => _loadingFeedback = true);
+            _startFeedbackPolling();
+          }
         },
         onError: (error) {
           setState(() => _wsConnected = false);
@@ -148,7 +161,10 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       _wsConnected = false;
       _feedbackData = null;
       _feedbackError = null;
+      _feedbackRequested = false;
+      _pollingAttempts = 0;
     });
+    _feedbackPollingTimer?.cancel();
     _interviewService.disconnectWebSocket();
   }
 
@@ -173,24 +189,13 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
 
       // 2. disconnect WebSocket
       _interviewService.disconnectWebSocket();
-
-      // 3. call API to get feedback
-      final feedbackResponse = await _interviewService.getInterviewFeedback(_sessionId!);
-
-      setState(() {
-        _feedbackData = feedbackResponse;
-        _currentState = InterviewState.showingFeedback;
-        _loadingFeedback = false;
-        _wsConnected = false;
-      });
-
     } catch (e) {
       setState(() {
         _feedbackError = e.toString();
         _loadingFeedback = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to get feedback: $e')),
+        SnackBar(content: Text('Failed to end interview: $e')),
       );
     }
   }
@@ -227,6 +232,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   @override
   void dispose() {
     _controller.dispose();
+    _feedbackPollingTimer?.cancel();
     _interviewService.disconnectWebSocket();
     super.dispose();
   }
@@ -520,6 +526,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                                     ),
                                   )
                                 : ListView.builder(
+                                    controller: _scrollController,
                                     padding: const EdgeInsets.all(20),
                                     itemCount: _messages.length,
                                     itemBuilder: (context, idx) {
@@ -670,10 +677,20 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'This may take a few moments',
+              'AI is analyzing your interview performance',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Checking for feedback... (${_pollingAttempts}/${_maxPollingAttempts})',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
               ),
             ),
           ],
@@ -722,6 +739,51 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     }
 
     final feedbackContent = _feedbackData!['data'];
+    if (feedbackContent == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 48,
+              height: 48,
+              child: CircularProgressIndicator(
+                strokeWidth: 4,
+                color: Color(0xFF263238),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Generating your interview feedback...',
+              style: TextStyle(
+                fontSize: 18,
+                color: Color(0xFF263238),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'AI is analyzing your interview performance',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Checking for feedback... (${_pollingAttempts}/${_maxPollingAttempts})',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final positives = feedbackContent['positives'] as List<dynamic>? ?? [];
     final improvementAreas = feedbackContent['improvementAreas'] as List<dynamic>? ?? [];
     final resources = feedbackContent['resources'] as List<dynamic>? ?? [];
@@ -1252,6 +1314,53 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
           )).toList(),
         ],
       ),
+    );
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    }
+  }
+
+  void _startFeedbackPolling() {
+    _pollingAttempts = 0;
+    _feedbackPollingTimer = Timer.periodic(
+      _pollingInterval,
+      (Timer timer) async {
+        _pollingAttempts++;
+        
+        try {
+          final feedbackResponse = await _interviewService.getInterviewFeedback(_selectedWorkflow!.id, _sessionId!);
+          final feedbackContent = feedbackResponse['data'];
+          
+          if (feedbackContent != null) {
+            // get valid feedback, stop polling
+            timer.cancel();
+            setState(() {
+              _feedbackData = feedbackResponse;
+              _currentState = InterviewState.showingFeedback;
+              _loadingFeedback = false;
+            });
+          } else if (_pollingAttempts >= _maxPollingAttempts) {
+            // reach max attempts, stop polling and show error
+            timer.cancel();
+            setState(() {
+              _feedbackError = 'Feedback generation timed out after ${_maxPollingAttempts * 2} seconds';
+              _loadingFeedback = false;
+            });
+          }
+          // if feedbackContent is null and not reached max attempts, continue polling
+        } catch (e) {
+          if (_pollingAttempts >= _maxPollingAttempts) {
+            timer.cancel();
+            setState(() {
+              _feedbackError = e.toString();
+              _loadingFeedback = false;
+            });
+          }
+        }
+      },
     );
   }
 }

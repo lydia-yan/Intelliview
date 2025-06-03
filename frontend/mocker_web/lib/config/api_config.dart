@@ -18,12 +18,16 @@ class ApiConfig {
   static const String interviewsStartEndpoint = '/interviews/start';
   
   // Interview feedback endpoints
-  static String interviewFeedbackEndpoint(String sessionId) => '/interviews/$sessionId/feedback';
+  static String interviewFeedbackEndpoint(String workflowId, String sessionId) => '/interviews/$workflowId/$sessionId/feedback';
   static String workflowInterviewsEndpoint(String workflowId) => '/workflows/$workflowId/interviews';
   
   // WebSocket endpoints
   static String getWebSocketUrl(String sessionId, String parameter) {
     final wsBaseUrl = baseUrl.replaceFirst('http://', 'ws://').replaceFirst('https://', 'wss://');
+    if (parameter.startsWith('?')) {
+      return '$wsBaseUrl/ws/$sessionId$parameter';
+    } else {
     return '$wsBaseUrl/ws/$sessionId?$parameter';
+    }
   }
 } 
