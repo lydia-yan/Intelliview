@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/interview_service.dart';
+import '../services/workflow_service.dart';
+import '../models/workflow.dart';
 import '../widgets/navbar.dart';
 import '../theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,39 +22,80 @@ class FeedbackPage extends StatefulWidget {
 
 class _FeedbackPageState extends State<FeedbackPage> {
   final InterviewService _interviewService = InterviewService();
+  final WorkflowService _workflowService = WorkflowService();
   
   ContentType _currentContentType = ContentType.list;
   
   List<Map<String, dynamic>> _interviewHistory = [];
+  List<Workflow> _workflows = [];
+  Workflow? _selectedWorkflow;
   Map<String, dynamic>? _selectedInterview;
-  bool _loading = true;
+  bool _loadingInterviews = true;
+  bool _loadingWorkflows = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _loadInterviewHistory();
+    _loadWorkflows();
   }
 
-  Future<void> _loadInterviewHistory() async {
+  Future<void> _loadWorkflows() async {
     try {
       setState(() {
-        _loading = true;
+        _loadingWorkflows = true;
         _error = null;
       });
 
-      final history = await _interviewService.getInterviewHistory('all'); // pass 'all' to get all history
+      final workflows = await _workflowService.getWorkflows();
       
       setState(() {
-        _interviewHistory = history;
-        _loading = false;
+        _workflows = workflows;
+        _loadingWorkflows = false;
+        
+        // 如果有工作流，默认选择第一个
+        if (workflows.isNotEmpty) {
+          _selectedWorkflow = workflows.first;
+          _loadInterviewHistory(_selectedWorkflow!.workflowId);
+        } else {
+          _loadingInterviews = false;
+        }
       });
     } catch (e) {
       setState(() {
         _error = e.toString();
-        _loading = false;
+        _loadingWorkflows = false;
+        _loadingInterviews = false;
       });
     }
+  }
+
+  Future<void> _loadInterviewHistory(String workflowId) async {
+    try {
+      setState(() {
+        _loadingInterviews = true;
+        _error = null;
+      });
+
+      final history = await _interviewService.getInterviewHistory(workflowId);
+      
+      setState(() {
+        _interviewHistory = history;
+        _loadingInterviews = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _loadingInterviews = false;
+      });
+    }
+  }
+
+  void _selectWorkflow(Workflow workflow) {
+    setState(() {
+      _selectedWorkflow = workflow;
+      _loadInterviewHistory(workflow.workflowId);
+    });
   }
 
   void _viewTranscript(Map<String, dynamic> interview) {
@@ -127,7 +170,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
   }
 
   Widget _buildHistoryList() {
-    if (_loading) {
+    if (_loadingWorkflows) {
       return const Center(
         child: SizedBox(
           width: 32,
@@ -148,7 +191,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
             Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
             const SizedBox(height: 16),
             Text(
-              'Failed to load interview history',
+              'Failed to load data',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -163,7 +206,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _loadInterviewHistory,
+              onPressed: _loadWorkflows,
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
               style: ElevatedButton.styleFrom(
@@ -176,20 +219,20 @@ class _FeedbackPageState extends State<FeedbackPage> {
       );
     }
 
-    if (_interviewHistory.isEmpty) {
+    if (_workflows.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: 64, color: Colors.grey[400]),
+            Icon(Icons.work_outline, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'No interview history yet',
+              'No interview positions yet',
               style: TextStyle(fontSize: 18, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
-              'Complete some mock interviews to see your feedback history',
+              'Prepare for an interview first to see your feedback history',
               style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
@@ -206,7 +249,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Interview History (${_interviewHistory.length} ${_interviewHistory.length == 1 ? 'interview' : 'interviews'})',
+                'Interview History',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -221,14 +264,142 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   color: Colors.grey[600],
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+              
+              // 工作流选择器
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.work, size: 20, color: Colors.grey[700]),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Select Position',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 300),
+                        child: PopupMenuButton<Workflow>(
+                          onSelected: (workflow) {
+                            _selectWorkflow(workflow);
+                          },
+                          color: Colors.white,
+                          elevation: 8,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          itemBuilder: (context) => _workflows.map((workflow) {
+                            return PopupMenuItem<Workflow>(
+                              value: workflow,
+                              child: Text(
+                                '${workflow.company} - ${workflow.position}',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[800]),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          child: Container(
+                            height: 48,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey[300]!, width: 1.5),
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
               Expanded(
+                                  child: Text(
+                                    _selectedWorkflow == null
+                                        ? 'Select a workflow'
+                                        : '${_selectedWorkflow!.company} - ${_selectedWorkflow!.position}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: _selectedWorkflow == null ? Colors.grey[500] : Colors.grey[800],
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Icon(Icons.keyboard_arrow_down, size: 18, color: Colors.grey[700]),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // 面试历史列表
+              _loadingInterviews
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: Color(0xFF263238),
+                      ),
+                    ),
+                  )
+                : _interviewHistory.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          children: [
+                            Icon(Icons.history, size: 48, color: Colors.grey[400]),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No interviews for this position yet',
+                              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Expanded(
                 child: ListView.builder(
                   itemCount: _interviewHistory.length,
                   itemBuilder: (context, index) {
                     final interview = _interviewHistory[index];
                     return _InterviewHistoryCard(
                       interview: interview,
+                            selectedWorkflow: _selectedWorkflow,
                       onViewTranscript: () => _viewTranscript(interview),
                       onViewFeedback: () => _viewFeedback(interview),
                     );
@@ -248,8 +419,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
     }
 
     final transcript = _selectedInterview!['transcript'] as List<dynamic>? ?? [];
-    final position = _selectedInterview!['position'] ?? '';
-    final company = _selectedInterview!['company'] ?? '';
+    final position = _selectedWorkflow?.position ?? _selectedInterview!['position'] ?? 'Unknown Position';
+    final company = _selectedWorkflow?.company ?? _selectedInterview!['company'] ?? 'Unknown Company';
     final duration = _selectedInterview!['duration_minutes'] ?? 0;
     final createAt = _selectedInterview!['createAt'] ?? '';
 
@@ -363,7 +534,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                                 itemBuilder: (context, index) {
                                   final message = transcript[index];
                                   final role = message['role'] ?? '';
-                                  final content = message['content'] ?? '';
+                                  final content = message['message'] ?? message['content'] ?? '';
                                   final isUser = role == 'user';
                                   
                                   return Container(
@@ -436,8 +607,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
       return const Center(child: Text('No feedback available'));
     }
 
-    final position = _selectedInterview!['position'] ?? '';
-    final company = _selectedInterview!['company'] ?? '';
+    final position = _selectedWorkflow?.position ?? _selectedInterview!['position'] ?? 'Unknown Position';
+    final company = _selectedWorkflow?.company ?? _selectedInterview!['company'] ?? 'Unknown Company';
     final positives = feedback['positives'] as List<dynamic>? ?? [];
     final improvementAreas = feedback['improvementAreas'] as List<dynamic>? ?? [];
     final resources = feedback['resources'] as List<dynamic>? ?? [];
@@ -1000,19 +1171,21 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
 class _InterviewHistoryCard extends StatelessWidget {
   final Map<String, dynamic> interview;
+  final Workflow? selectedWorkflow;
   final VoidCallback onViewTranscript;
   final VoidCallback onViewFeedback;
 
   const _InterviewHistoryCard({
     required this.interview,
+    required this.selectedWorkflow,
     required this.onViewTranscript,
     required this.onViewFeedback,
   });
 
   @override
   Widget build(BuildContext context) {
-    final position = interview['position'] ?? 'Unknown Position';
-    final company = interview['company'] ?? 'Unknown Company';
+    final position = selectedWorkflow?.position ?? interview['position'] ?? 'Unknown Position';
+    final company = selectedWorkflow?.company ?? interview['company'] ?? 'Unknown Company';
     final duration = interview['duration_minutes'] ?? 0;
     final createAt = interview['createAt'] ?? '';
     final overallRating = interview['feedback']?['overallRating'] ?? 0;
