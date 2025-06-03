@@ -3,9 +3,14 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from backend.tools.firebase_config import auth
 from backend.data.database import firestore_db
 from backend.data.schemas import Profile
-# from backend.agents.interviewer.agent import start_agent_session, client_to_agent_messaging, agent_to_client_messaging
+from backend.agents.interviewer.agent import start_agent_session, client_to_agent_messaging, agent_to_client_messaging, save_transcript
 from backend.tools.connection_manager import manager
+from backend.api.schemas import InterviewStartRequest
 import asyncio
+from datetime import datetime, timezone
+from backend.coordinator.preparation_workflow import generate_session_id
+from backend.agents.interview_judge.agent import _run_judge_from_session
+from backend.coordinator.session_manager import session_service
 
 router = APIRouter()
 bearer = HTTPBearer()
@@ -124,6 +129,32 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         manager.disconnect(websocket)
         print(f"❌ Client #{session_id} disconnected")
+        try:
+            # Manually expire session
+            session.state["duration"] = int(
+                (datetime.now(timezone.utc) - session.state.get("start_time")).total_seconds() / 60
+            )
+
+            # Save transcript
+            save_transcript(session)
+            print(f"[SAVE]: Transcript saved for session {session_id}")
+
+            # Generate feedback
+            await _run_judge_from_session(session)
+            print(f"[FEEDBACK]: Feedback generated for session {session_id}")
+
+            # FINALIZE: close the session
+            try:
+                await session_service.delete_session(
+                    app_name=session.app_name,
+                    user_id=session.user_id,
+                    session_id=session.id
+                )
+                print(f"[CLEANUP]: Session {session.id} successfully closed.")
+            except Exception as e:
+                print(f"[CLEANUP ERROR]: Failed to close session {session.id}: {e}")
+        except Exception as e:
+            print(f"[ERROR]: Failed to finalize session after disconnect: {e}")
     except Exception as e:
         print(f"[ERROR] Client #{session_id} error: {e}")
         manager.disconnect(websocket)
@@ -131,3 +162,34 @@ async def websocket_endpoint(
             await websocket.close()
         except Exception:
             pass
+
+
+
+@router.post("/interviews/start")
+async def start_interview(request: InterviewStartRequest, user=Depends(verify_token)):
+    session_id = generate_session_id()
+
+    # You might want to store this session info in the database here
+
+    # Format WebSocket parameters
+    websocket_parameter = (
+        f"?user_id={user["uid"]}&workflow_id={request.workflow_id}"
+        f"&duration={request.duration}&is_audio={str(request.is_audio).lower()}"
+    )
+
+    return {
+        "success": True,
+        "data": {
+            "session_id": session_id,
+            "websocket_parameter": websocket_parameter
+        }
+    }
+
+@router.post("/interviews/{workflow_id}/{session_id}/feedback")
+async def generate_feedback(workflow_id: str, session_id: str, user=Depends(verify_token)):
+    feedback_result = firestore_db.get_feedback(user["uid"], workflow_id, session_id)
+
+    return {
+        "success": feedback_result["data"] is not None,
+        "data": feedback_result["data"]
+    }

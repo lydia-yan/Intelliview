@@ -204,3 +204,38 @@ def test_get_all_interviews_for_workflow_empty():
         res = response.json()
         assert res["success"] is False
         assert res["data"] == []
+
+        
+# --- Test POST /interviews/start ---
+def test_post_interview_start():
+    with patch("backend.coordinator.preparation_workflow.generate_session_id", return_value="session_abc"):
+        response = client.post(
+            "/interviews/start",
+            json={"workflow_id": "wf_001", "duration": 5, "is_audio": False},
+            headers={"Authorization": "Bearer fake-token"}
+        )
+        assert response.status_code == 200
+        res = response.json()
+        assert res["success"] is True
+        assert "session_id" in res["data"]
+        assert "websocket_parameter" in res["data"]
+
+# --- Test POST /interviews/{workflow_id}/{session_id}/feedback ---
+def test_get_feedback_for_session():
+    with patch("backend.data.database.firestore_db.get_feedback", return_value={
+        "message": "Feedback found",
+        "data": {
+            "score": 4,
+            "summary": "You answered clearly",
+            "strengths": ["confidence"],
+            "improvements": ["structure"]
+        }
+    }):
+        response = client.post(
+            "/interviews/wf_001/session_abc/feedback",
+            headers={"Authorization": "Bearer fake-token"}
+        )
+        assert response.status_code == 200
+        res = response.json()
+        assert res["success"] is True
+        assert res["data"]["score"] == 4

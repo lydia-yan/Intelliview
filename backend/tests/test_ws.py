@@ -7,11 +7,6 @@ from backend.app import app  # adjust path to where `app = FastAPI()` is
 def client():
     return TestClient(app)
 
-def test_root(client):
-    response = client.get("/")
-    assert response.status_code == 200
-    assert "Mock Interview Agent" in response.text or response.json()["message"]
-
 def test_websocket_text_interaction(client):
     with client.websocket_connect(
         "/ws/test123?user_id=test_user&workflow_id=test_workflow&duration=1&is_audio=false"

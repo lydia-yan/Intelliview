@@ -10,3 +10,9 @@ class InterviewPrepareRequest(BaseModel):
     portfolioUrl: Optional[HttpUrl] = None
     additionalInfo: Optional[str] = None
     jobDescription: str
+
+
+class InterviewStartRequest(BaseModel):
+    workflow_id: str
+    duration: int = 15 #can set the default value here
+    is_audio: bool = False
