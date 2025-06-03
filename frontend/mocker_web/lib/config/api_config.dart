@@ -1,0 +1,29 @@
+class ApiConfig {
+  // Base API configuration
+  static const String baseUrl = 'http://localhost:8000';
+  
+  // Authentication endpoints
+  static const String authInitEndpoint = '/auth/init';
+  
+  // User endpoints
+  static const String userEndpoint = '/user';
+  static const String userAvatarEndpoint = '/user/avatar';
+  
+  // Workflow endpoints
+  static const String workflowsEndpoint = '/workflows';
+  static const String workflowStartWithPdfEndpoint = '/workflows/start-with-pdf';
+  static String recommendedQAEndpoint(String workflowId) => '/workflows/$workflowId/recommended-qa';
+  
+  // Interview endpoints
+  static const String interviewsStartEndpoint = '/interviews/start';
+  
+  // Interview feedback endpoints
+  static String interviewFeedbackEndpoint(String sessionId) => '/interviews/$sessionId/feedback';
+  static String workflowInterviewsEndpoint(String workflowId) => '/workflows/$workflowId/interviews';
+  
+  // WebSocket endpoints
+  static String getWebSocketUrl(String sessionId, String parameter) {
+    final wsBaseUrl = baseUrl.replaceFirst('http://', 'ws://').replaceFirst('https://', 'wss://');
+    return '$wsBaseUrl/ws/$sessionId?$parameter';
+  }
+} 
