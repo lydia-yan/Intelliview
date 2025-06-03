@@ -191,6 +191,38 @@ async def client_to_agent_messaging(websocket, live_request_queue, session):
             mime_type = message["mime_type"]
             data = message["data"]
 
+            try:
+                control = json.loads(data)
+                if (
+                    isinstance(control, dict)
+                    and control.get("type") == "control"
+                    and control.get("action") == "end_interview"
+                ):
+                    print("[CLIENT TO AGENT]: Received end_interview control, generating feedback and closing...")
+                    
+                    # Calculate duration
+                    start_time = session.state.get("start_time")
+                    end_time = datetime.now(timezone.utc)
+                    duration = int((end_time - start_time).total_seconds() / 60)
+                    session.state["duration"] = duration
+                    
+                    # Save transcript
+                    save_transcript(session)
+                    print(f"[SAVE]: Transcript saved for session {session.id}")
+                    
+                    # Generate feedback
+                    try:
+                        await _run_judge_from_session(session)
+                        print(f"[FEEDBACK]: Feedback generated for session {session.id}")
+                    except Exception as e:
+                        print(f"[ERROR]: Failed to generate feedback: {e}")
+                    
+                    # Close WebSocket
+                    await websocket.close(code=1000)
+                    break
+            except Exception:
+                pass
+
             if mime_type == "text/plain":
                 # Send text to agent
                 content = Content(role="user", parts=[Part.from_text(text=data)])
