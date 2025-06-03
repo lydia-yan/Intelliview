@@ -4,7 +4,7 @@ from typing import List, Dict, Optional, Any
 
 # Profile Schema
 class Profile(BaseModel):
-    name: str
+    name: str = None
     email: EmailStr = None
     photoURL: HttpUrl = None
     linkedinLink: HttpUrl = None
@@ -15,14 +15,14 @@ class Profile(BaseModel):
 
 # Interview Schema
 class TranscriptTurn(BaseModel):
-    speaker: str # "AI" or "user"
-    text: str
+    role: str # "AI" or "user"
+    message: str
 
 class Interview(BaseModel):
-    transcript: List[Dict[str, Any]]  = None
+    transcript: List[Dict[str, Any]] 
+    duration_minutes: int
     feedback: Dict[str, Any] = None
     createAt: datetime = None
-    workflowId: str = None #assign it after creation 
 
 # Feedback Schema (nested within Interview)
 class FeedbackImprovementArea(BaseModel):
