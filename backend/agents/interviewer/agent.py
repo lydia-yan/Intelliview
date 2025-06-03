@@ -6,11 +6,13 @@ import asyncio, json, os,sys,re
 from .prompt import get_background_prompt
 from backend.data.database import firestore_db  # Adjust this path if needed
 from backend.data.schemas import Interview
-from google.adk.sessions.in_memory_session_service import InMemorySessionService
 from google.adk.runners import Runner, RunConfig
 from google.adk.agents import LiveRequestQueue
 from google.genai.types import Content, Part, Blob
 import base64
+from backend.agents.interview_judge.agent import _run_judge_from_session
+from backend.coordinator.session_manager import session_service
+
 
 
 
@@ -22,7 +24,6 @@ from backend.config import set_google_cloud_env_vars
 set_google_cloud_env_vars()
 
 APP_NAME = "MockInterviewerAgent"
-session_service = InMemorySessionService()
 
 
 # a custom agent inherited from Llmagent
@@ -117,7 +118,15 @@ async def agent_to_client_messaging(websocket, live_events, session):
                 duration = int((end_time - start_time).total_seconds() / 60)
                 session.state["duration"] = duration
                 await websocket.close(code=1000)
+                
                 save_transcript(session)
+
+                # Run feedback generation
+                try:
+                    await _run_judge_from_session(session)
+                    print("[DEBUG]: FEEDBACK GENERATED")
+                except Exception as e:
+                    print(f"[ERROR] Feedback generation failed: {e}")
                 break
             
             async for event in live_events:
@@ -223,7 +232,6 @@ def save_transcript(session):
 
 
     interview_data = Interview(
-        workflowId=workflowId,
         transcript=transcript,  
         duration_minutes=session.state.get("duration")
     )
@@ -231,5 +239,6 @@ def save_transcript(session):
     firestore_db.create_interview(
         user_id=session.user_id,
         session_id=session.id,
+        workflow_id=workflowId,
         interview_data=interview_data
     )

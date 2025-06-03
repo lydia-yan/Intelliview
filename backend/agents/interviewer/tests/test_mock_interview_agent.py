@@ -49,9 +49,8 @@ async def test_start_agent_session_sets_state(mock_get_qas, mock_get_exp):
     assert session.state["duration_minutes"] == duration
     assert "start_time" in session.state
     assert isinstance(session.state["transcript"], list)
-    assert session.state["transcript"][0][0] == "user"
-    assert "mock interview" in session.state["transcript"][0][1].lower()
-
+    assert session.state["transcript"][0]["role"] == "AI"
+    assert "self introduction" in session.state["transcript"][0]["message"]
     # Basic assertions on the returned objects
     assert hasattr(live_queue, "send_content")
     assert hasattr(live_events, "__aiter__")
