@@ -16,6 +16,35 @@ def set_google_cloud_env_vars():
     load_dotenv(env_file_path)
 
 
+class PortfolioConfig:
+    """Configuration for portfolio analysis service"""
+    
+    # Page loading timeout in seconds
+    TIMEOUT = 30
+    
+    # Maximum content size to extract (characters)
+    MAX_CONTENT_SIZE = 50000
+    
+    # User agent for web scraping
+    USER_AGENT = "Portfolio-Analyzer/1.0"
+    
+    # Maximum number of projects to extract
+    MAX_PROJECTS = 20
+    
+    # Maximum number of skills to extract
+    MAX_SKILLS = 50
+    
+    # Common portfolio platforms and their selectors
+    PLATFORM_SELECTORS = {
+        "default": {
+            "projects": ["[class*='project']", "[class*='portfolio']", "[class*='work']"],
+            "skills": ["[class*='skill']", "[class*='tech']", "[class*='tool']"],
+            "description": ["[class*='bio']", "[class*='about']", "[class*='description']"],
+            "title": ["h1", "[class*='name']", "[class*='title']"]
+        }
+    }
+
+
 class PDFConfig:
     """
     PDF processing configuration settings
