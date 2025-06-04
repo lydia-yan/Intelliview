@@ -14,12 +14,12 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAlBCWpQhnOxo8j9GNqv6OBebVSZZBO8Ck',
-    appId: '1:346901812089:web:44b67dd6b2d43c64b9d5a8',
-    messagingSenderId: '346901812089',
+    apiKey: 'AIzaxxxbVSZZBO8Ck',
+    appId: '1:34xxxx901xxxxxxx64b9d5a8',
+    messagingSenderId: '346xxxxxxx9',
     projectId: 'mock-interview-app-2025',
     authDomain: 'mock-interview-app-2025.firebaseapp.com',
-    storageBucket: 'mock-interview-app-2025.firebasestorage.app',
-    measurementId: 'G-RY4Q7B46D6',
+    storageBucket: 'mock-interviewxxxxxtorage.app',
+    measurementId: 'G-Rxxxxx6D6',
   );
 }
