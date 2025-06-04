@@ -8,7 +8,9 @@ import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 
 class InterviewPreparePage extends StatefulWidget {
-  const InterviewPreparePage({super.key});
+  final VoidCallback? onNavigateToDashboard;
+  
+  const InterviewPreparePage({super.key, this.onNavigateToDashboard});
 
   @override
   State<InterviewPreparePage> createState() => _InterviewPreparePageState();
@@ -46,7 +48,15 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
       );
       return;
     }
+    
+    // prevent duplicate submission
+    if (_submitting) return;
+    
     setState(() => _submitting = true);
+    
+    // show loading dialog
+    _showLoadingDialog();
+    
     try {
       final request = InterviewPrepareRequest(
         resumeFile: _resumeFile!,
@@ -56,63 +66,209 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
         portfolioLink: _portfolioController.text.isEmpty ? null : _portfolioController.text,
         additionalInfo: _additionalController.text.isEmpty ? null : _additionalController.text,
       );
-      // 获取idToken
+      // get idToken
       final authService = Provider.of<AuthService>(context, listen: false);
       final idToken = await authService.currentUser?.getIdToken();
       if (idToken == null) {
-        setState(() => _submitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not authenticated. Please login again.')),
-        );
+        if (mounted) {
+          setState(() => _submitting = false);
+          Navigator.of(context).pop(); // close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User not authenticated. Please login again.')),
+          );
+        }
         return;
       }
       final response = await _interviewService.submitInterviewPreparation(request, idToken);
-      setState(() => _submitting = false);
-      if (response.success) {
-        _showSuccessDialog(response);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: \\${response.message}')),
-        );
+      if (mounted) {
+        setState(() => _submitting = false);
+        Navigator.of(context).pop(); // close loading dialog
+        if (response.success) {
+          _showSuccessDialog(response);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${response.message}')),
+          );
+        }
       }
     } catch (e) {
-      setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit: \\${e}')),
-      );
+      if (mounted) {
+        setState(() => _submitting = false);
+        Navigator.of(context).pop(); // close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to submit: $e')),
+        );
+      }
     }
+  }
+
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // disable clicking outside to close
+      builder: (ctx) => PopScope(
+        canPop: false, // disable back button
+        child: AlertDialog(
+          backgroundColor: Colors.white, 
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          contentPadding: const EdgeInsets.all(32), 
+          content: Container(
+            width: 500, 
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 4,
+                    color: Color(0xFF263238),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Generating interview preparation materials...',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF263238),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'It usually takes 2-3 minutes to generate the materials. Once completed, they will automatically appear in the dashboard.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'You can exit this page and come back later to view the results.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _goToDashboard(),
+                    icon: const Icon(Icons.dashboard),
+                    label: const Text('Back to Dashboard'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF263238),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: Text(
+                      'Continue waiting',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _goToDashboard() {
+    Navigator.of(context).pop(); // close dialog
+    
+    widget.onNavigateToDashboard?.call();
   }
 
   void _showSuccessDialog(InterviewPrepareResponse response) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Interview Preparation Complete'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 28),
+            const SizedBox(width: 12),
+            const Text('Interview preparation completed', style: TextStyle(color: Color(0xFF263238))),
+          ],
+        ),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Status: ${response.message}'),
-              if (response.data != null) ...[
-                const SizedBox(height: 16),
-                const Text('Resume Analysis:', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text('Skills: ${response.data!.resumeAnalysis.skillsExtracted.join(', ')}'),
-                Text('Experience: ${response.data!.resumeAnalysis.experienceYears} years'),
+              Text('Status: ${response.success ? "Success" : "Failed"}'),
+              if (response.message.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                const Text('Key Achievements:', style: TextStyle(fontWeight: FontWeight.bold)),
-                ...response.data!.resumeAnalysis.keyAchievements.map((achievement) => Text('• $achievement')),
-                const SizedBox(height: 8),
-                const Text('Preparation Tips:', style: TextStyle(fontWeight: FontWeight.bold)),
-                ...response.data!.preparationTips.map((tip) => Text('• $tip')),
+                Text('Message: ${response.message}'),
               ],
+              if (response.sessionId != null) ...[
+                const SizedBox(height: 8),
+                Text('Session ID: ${response.sessionId}'),
+              ],
+              if (response.workflowId != null) ...[
+                const SizedBox(height: 8),
+                Text('Workflow ID: ${response.workflowId}'),
+              ],
+              if (response.completedAgents != null && response.completedAgents!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Text('Completed steps:', style: TextStyle(fontWeight: FontWeight.bold)),
+                ...response.completedAgents!.map((agent) => Text('• $agent')),
+              ],
+              if (response.processingTime != null) ...[
+                const SizedBox(height: 8),
+                Text('Processing time: ${response.processingTime!.toStringAsFixed(1)} seconds'),
+              ],
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green[200]!),
+                ),
+                child: const Text(
+                  'Interview preparation materials have been generated! You can now view them in the dashboard and start the mock interview.',
+                  style: TextStyle(color: Color(0xFF2E7D32)),
+                ),
+              ),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close'),
+            child: const Text('View Later'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _goToDashboard();
+            },
+            icon: const Icon(Icons.dashboard),
+            label: const Text('Go to Dashboard'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF263238),
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),
@@ -241,16 +397,14 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                                             children: [
                                               _buildFormField(
                                                 controller: _linkedinController,
-                                                label: 'LinkedIn URL',
+                                                label: 'LinkedIn URL (Optional)',
                                                 icon: Icons.work,
-                                                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                                               ),
                                               const SizedBox(height: 20),
                                               _buildFormField(
                                                 controller: _githubController,
-                                                label: 'GitHub URL',
+                                                label: 'GitHub URL (Optional)',
                                                 icon: Icons.code,
-                                                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                                               ),
                                               const SizedBox(height: 20),
                                               _buildFormField(

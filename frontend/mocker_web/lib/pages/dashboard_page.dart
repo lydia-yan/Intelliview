@@ -41,7 +41,11 @@ class _DashboardPageState extends State<DashboardPage> {
         _selectedWorkflowId = workflowId;
       });
     }),
-    const InterviewPreparePage(),
+    InterviewPreparePage(onNavigateToDashboard: () {
+      setState(() {
+        _selectedIndex = 0; 
+      });
+    }),
     const MockInterviewPage(),
     QAPage(preSelectedWorkflowId: _selectedWorkflowId),
     const FeedbackPage(),
