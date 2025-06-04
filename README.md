@@ -111,8 +111,9 @@
    ```
 
 5. **Run the backend server**
+   From the project root path
    ```bash
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   uvicorn backend.app:app --reload --port 8000
    ```
 
 ### 🎨 Frontend Setup
