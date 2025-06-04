@@ -127,9 +127,9 @@
    flutter pub get
    ```
 
-3. **Configure Firebase**
-   - Add your `firebase_options.dart` file
-   - Update `lib/config/api_config.dart` with your backend URL
+3. **Configure Firebase and Google Sign-In Client ID**
+   - Add your `firebase_options.dart` file or change the ID and key to your own version in the existing `firebase_options.dart` file
+   - Add your own Google Sign-In Client ID in `lib/services/auth_service.dart` and `web/index.html` file
 
 4. **Run the web application**
    ```bash
