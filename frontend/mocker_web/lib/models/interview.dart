@@ -90,22 +90,36 @@ class InterviewPrepareRequest {
 class InterviewPrepareResponse {
   final bool success;
   final String message;
-  final InterviewPrepareData? data;
-  final DateTime timestamp;
+  final String? sessionId;
+  final String? workflowId;
+  final String? userId;
+  final List<String>? completedAgents;
+  final double? processingTime;
+  final String? error;
 
   InterviewPrepareResponse({
     required this.success,
-    required this.message,
-    this.data,
-    required this.timestamp,
+    this.message = '',
+    this.sessionId,
+    this.workflowId,
+    this.userId,
+    this.completedAgents,
+    this.processingTime,
+    this.error,
   });
 
   factory InterviewPrepareResponse.fromJson(Map<String, dynamic> json) {
     return InterviewPrepareResponse(
-      success: json['success'] as bool,
-      message: json['message'] as String,
-      data: json['data'] != null ? InterviewPrepareData.fromJson(json['data']) : null,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      success: json['success'] as bool? ?? false,
+      message: json['message'] as String? ?? json['error'] as String? ?? '',
+      sessionId: json['session_id'] as String?,
+      workflowId: json['workflow_id'] as String?,
+      userId: json['user_id'] as String?,
+      completedAgents: json['completed_agents'] != null 
+          ? List<String>.from(json['completed_agents']) 
+          : null,
+      processingTime: json['processing_time'] as double?,
+      error: json['error'] as String?,
     );
   }
 
@@ -113,64 +127,12 @@ class InterviewPrepareResponse {
     return {
       'success': success,
       'message': message,
-      'data': data?.toJson(),
-      'timestamp': timestamp.toIso8601String(),
-    };
-  }
-}
-
-class InterviewPrepareData {
-  final String workflowId;
-  final ResumeAnalysis resumeAnalysis;
-  final List<String> preparationTips;
-
-  InterviewPrepareData({
-    required this.workflowId,
-    required this.resumeAnalysis,
-    required this.preparationTips,
-  });
-
-  factory InterviewPrepareData.fromJson(Map<String, dynamic> json) {
-    return InterviewPrepareData(
-      workflowId: json['workflow_id'] as String,
-      resumeAnalysis: ResumeAnalysis.fromJson(json['resume_analysis']),
-      preparationTips: List<String>.from(json['preparation_tips']),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
+      'session_id': sessionId,
       'workflow_id': workflowId,
-      'resume_analysis': resumeAnalysis.toJson(),
-      'preparation_tips': preparationTips,
-    };
-  }
-}
-
-class ResumeAnalysis {
-  final List<String> skillsExtracted;
-  final int experienceYears;
-  final List<String> keyAchievements;
-
-  ResumeAnalysis({
-    required this.skillsExtracted,
-    required this.experienceYears,
-    required this.keyAchievements,
-  });
-
-  factory ResumeAnalysis.fromJson(Map<String, dynamic> json) {
-    return ResumeAnalysis(
-      skillsExtracted: List<String>.from(json['skills_extracted']),
-      experienceYears: json['experience_years'] as int,
-      keyAchievements: List<String>.from(json['key_achievements']),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'skills_extracted': skillsExtracted,
-      'experience_years': experienceYears,
-      'key_achievements': keyAchievements,
+      'user_id': userId,
+      'completed_agents': completedAgents,
+      'processing_time': processingTime,
+      'error': error,
     };
   }
 }
