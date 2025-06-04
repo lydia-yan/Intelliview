@@ -80,9 +80,12 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
         return;
       }
       final response = await _interviewService.submitInterviewPreparation(request, idToken);
-      if (mounted) {
+      if (mounted && _submitting) {
         setState(() => _submitting = false);
-        Navigator.of(context).pop(); // close loading dialog
+        // Check if the loading dialog is still open before trying to close it
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop(); // close loading dialog
+        }
         if (response.success) {
           _showSuccessDialog(response);
         } else {
@@ -92,9 +95,12 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
         }
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && _submitting) {
         setState(() => _submitting = false);
-        Navigator.of(context).pop(); // close loading dialog
+        // Check if the loading dialog is still open before trying to close it
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop(); // close loading dialog
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to submit: $e')),
         );
@@ -193,51 +199,144 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
   }
 
   void _goToDashboard() {
-    Navigator.of(context).pop(); // close dialog
-    
-    widget.onNavigateToDashboard?.call();
+    if (mounted) {
+      // Reset submitting state to prevent future callbacks from executing
+      setState(() => _submitting = false);
+      Navigator.of(context).pop(); // close dialog
+      
+      widget.onNavigateToDashboard?.call();
+    }
   }
 
   void _showSuccessDialog(InterviewPrepareResponse response) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white, 
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 28),
-            const SizedBox(width: 12),
-            const Text('Interview preparation completed', style: TextStyle(color: Color(0xFF263238))),
-          ],
-        ),
-        content: SingleChildScrollView(
+        contentPadding: const EdgeInsets.all(32), 
+        content: Container(
+          width: 500, 
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Status: ${response.success ? "Success" : "Failed"}'),
-              if (response.message.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text('Message: ${response.message}'),
-              ],
-              if (response.sessionId != null) ...[
-                const SizedBox(height: 8),
-                Text('Session ID: ${response.sessionId}'),
-              ],
-              if (response.workflowId != null) ...[
-                const SizedBox(height: 8),
-                Text('Workflow ID: ${response.workflowId}'),
-              ],
-              if (response.completedAgents != null && response.completedAgents!.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                const Text('Completed steps:', style: TextStyle(fontWeight: FontWeight.bold)),
-                ...response.completedAgents!.map((agent) => Text('• $agent')),
-              ],
-              if (response.processingTime != null) ...[
-                const SizedBox(height: 8),
-                Text('Processing time: ${response.processingTime!.toStringAsFixed(1)} seconds'),
-              ],
+              // Success Icon
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: Colors.green,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Title
+              const Text(
+                'Interview preparation completed',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF263238),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
               const SizedBox(height: 16),
+              
+              // Status and details
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Status: ${response.success ? "Success" : "Failed"}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF263238),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (response.message.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Message: ${response.message}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                    if (response.sessionId != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Session ID: ${response.sessionId}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                    if (response.workflowId != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Workflow ID: ${response.workflowId}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                    if (response.completedAgents != null && response.completedAgents!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Completed steps:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF263238),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      ...response.completedAgents!.map((agent) => Padding(
+                        padding: const EdgeInsets.only(left: 8, top: 2),
+                        child: Text(
+                          '• $agent',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      )),
+                    ],
+                    if (response.processingTime != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Processing time: ${response.processingTime!.toStringAsFixed(1)} seconds',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Success message
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -247,30 +346,57 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                 ),
                 child: const Text(
                   'Interview preparation materials have been generated! You can now view them in the dashboard and start the mock interview.',
-                  style: TextStyle(color: Color(0xFF2E7D32)),
+                  style: TextStyle(
+                    color: Color(0xFF2E7D32),
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Action buttons
+              Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _goToDashboard();
+                      },
+                      icon: const Icon(Icons.dashboard),
+                      label: const Text('Go to Dashboard'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF263238),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: Text(
+                        'View Later',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('View Later'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _goToDashboard();
-            },
-            icon: const Icon(Icons.dashboard),
-            label: const Text('Go to Dashboard'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF263238),
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
       ),
     );
   }
