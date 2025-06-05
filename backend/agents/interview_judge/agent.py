@@ -4,6 +4,9 @@ import os
 import asyncio
 import sys
 import re
+import requests
+from duckduckgo_search import DDGS
+import time
 
 # Add the project root to the Python path if necessary
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
@@ -22,6 +25,7 @@ from backend.data.database import firestore_db
 from backend.data.schemas import Feedback
 from pydantic import ValidationError
 from backend.coordinator.session_manager import session_service
+from google.adk.tools import google_search
 
 
 
@@ -29,7 +33,8 @@ INTERVIEW_JUDGE_AGENT = LlmAgent(
     model="gemini-2.0-flash", 
     name="feedback_generator",
     description="Generate personalized interview feedback based on interview conversation",
-    instruction=get_interview_judge_instruction()
+    instruction=get_interview_judge_instruction(),
+    tools=[google_search]
 )
 
 def run_judge_from_session(session):
@@ -84,7 +89,15 @@ async def _run_judge_from_session(session):
         result = parse_and_validate_feedback(response_text)
         if result["status"] == "valid":
             feedback_json = result["data"]
+            for resource in feedback_json.get("resources", []):
+                link = resource.get("link", "")
+                if not is_valid_and_reachable_url(link):
+                    print(f"[⚠️ Invalid link]: {link} – Regenerating via DuckDuckGo...")
+                    new_resource = search_ddgs(resource.get("title", "interview tips"))
+                    resource["title"] = new_resource["title"]
+                    resource["link"] = new_resource["link"]
             print("[DEBUG] Feedback is valid")
+            feedback_json = deduplicate_resources(feedback_json)
             result = save_feedback_to_db(session,feedback_json)
             if result["message"]: 
                 print("[DEBUG] Feedback stored.")
@@ -136,3 +149,57 @@ def save_feedback_to_db(session, validated):
     
     return firestore_db.set_feedback(session.user_id, session.state.get("workflow_id"), session.id, Feedback(**validated))
 
+
+def is_valid_and_reachable_url(url):
+    try:
+        response = requests.get(url, timeout=5)
+        if response.status_code >= 400:
+            return False
+        content = response.text.lower()
+        if "404" in content or "page not found" in content or "not available" in content:
+            return False
+        if len(content) < 500:  # arbitrary: prevent empty landing pages
+            return False
+        return True
+    except Exception:
+        return False
+
+def deduplicate_resources(feedback_json):
+    seen_links = set()
+    unique_resources = []
+    
+    for resource in feedback_json.get("resources", []):
+        link = resource.get("link")
+        if link and link not in seen_links:
+            unique_resources.append(resource)
+            seen_links.add(link)
+    
+    feedback_json["resources"] = unique_resources
+    return feedback_json
+        
+
+def search_ddgs(topic: str, max_results: int = 1, delay: int = 1) -> dict:
+    """
+    Use DDGS to get a real search result link for a given topic, with retry and delay to avoid rate limits.
+    """
+    try:
+        with DDGS() as ddgs:
+            for result in ddgs.text(topic, max_results=max_results):
+                if result and result.get("href", "").startswith("http"):
+                    return {
+                        "title": result.get("title", "Related resource"),
+                        "link": result["href"]
+                    }
+        # Wait before retrying if no result found
+        print(f"[Retry No valid link found. Waiting {delay}s...")
+        time.sleep(delay)
+    except Exception as e:
+        print(f"[Retry Error: {e}. Waiting {delay}s...")
+        time.sleep(delay)
+
+    # Fallback if all attempts fail
+    print("[Fallback] Using default backup link.")
+    return {
+        "title": "5 Tips To Ace a Behavioral-Based Interview",
+        "link": "https://jobs.gartner.com/life-at-gartner/your-career/5-tips-to-ace-a-behavioral-based-interview/"
+    }
