@@ -1,9 +1,10 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timezone, timedelta
-from backend.agents.interviewer.agent import start_agent_session, MockInterviewAgent
+from backend.agents.interviewer.agent import start_agent_session, MockInterviewAgent, save_transcript
 from google.adk.sessions import Session
 from backend.agents.interviewer.prompt import get_background_prompt
+from google.genai.types import Blob
 
 
 
@@ -106,3 +107,44 @@ async def test_system_instruction_is_set_correctly(mock_get_qas, mock_get_exp):
     assert personalExperience == mock_personal_experience
     assert recommendedQAs == mock_recommended_qas
     assert agent.instruction == system_instruction
+
+@pytest.mark.asyncio
+@patch("backend.agents.interviewer.agent.firestore_db")
+@patch("backend.agents.interviewer.agent.transcribe_audio_bytes")
+def test_save_transcript_with_audio(mock_transcribe, mock_db):
+    # Setup mock transcription result
+    mock_transcribe.return_value = "This is a transcribed sentence."
+
+    # Simulate a session with one audio entry
+    audio_data = b"fake audio bytes"
+    session = MagicMock()
+    session.user_id = "test-user"
+    session.id = "test-session"
+    session.state = {
+        "workflow_id": "test-workflow",
+        "duration": 5,
+        "transcript": [
+            {
+                "role": "user",
+                "message": "[audio message]",
+                "audio_blob": Blob(data=audio_data, mime_type="audio/pcm"),
+            },
+            {
+                "role": "AI",
+                "message": "Sure, let's get started!"
+            }
+        ]
+    }
+
+    # Run the function
+    save_transcript(session)
+
+    # Validate transcription was called
+    mock_transcribe.assert_called_once_with(audio_data)
+
+    # Validate firestore call with transcribed text
+    mock_db.create_interview.assert_called_once()
+    saved_interview = mock_db.create_interview.call_args[1]["interview_data"]
+
+    assert any(entry["message"] == "This is a transcribed sentence." for entry in saved_interview.transcript)
+    assert all("audio_blob" not in entry for entry in saved_interview.transcript)

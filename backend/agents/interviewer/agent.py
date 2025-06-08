@@ -12,6 +12,7 @@ from google.genai.types import Content, Part, Blob
 import base64
 from backend.agents.interview_judge.agent import _run_judge_from_session
 from backend.coordinator.session_manager import session_service
+from backend.tools.transcript_utils import transcribe_audio_bytes
 
 
 
@@ -163,7 +164,6 @@ async def agent_to_client_messaging(websocket, live_events, session):
                         }
                         await websocket.send_text(json.dumps(message))
                         print(f"[AGENT TO CLIENT]: audio/pcm: {len(audio_data)} bytes.")
-                        session.state["transcript"].append({"role": "AI", "message": "[audio response sent]"})
                     continue
 
                 # Handle partial text response
@@ -235,11 +235,12 @@ async def client_to_agent_messaging(websocket, live_request_queue, session):
             elif mime_type == "audio/pcm":
                 # Decode audio and send to agent
                 decoded_data = base64.b64decode(data)
-                live_request_queue.send_realtime(Blob(data=decoded_data, mime_type=mime_type))
+                blob = Blob(data=decoded_data, mime_type=mime_type)
+                live_request_queue.send_realtime(blob)
                 print(f"[CLIENT TO AGENT]: [audio data] {len(decoded_data)} bytes")
 
                 # Record audio event in transcript
-                session.state["transcript"].append({"role": "user", "message": "[audio message]"})
+                session.state["transcript"].append({"role": "user", "message": "[audio message]", "audio_blob": blob})
             else:
                 raise ValueError(f"Mime type not supported: {mime_type}")
     except Exception as e:
@@ -261,11 +262,30 @@ def save_transcript(session):
 
     transcript = session.state.get("transcript", [])
     workflowId= session.state.get("workflow_id")
+    duration_minutes=session.state.get("duration")
+    updated_transcript = []
 
+
+    for entry in transcript:
+        if entry["role"] == "user" and entry["message"] == "[audio message]" and "audio_blob" in entry:
+            try:
+                text = transcribe_audio_bytes(entry["audio_blob"].data)
+                updated_transcript.append({
+                    "role": entry["role"],
+                    "message": text
+                })
+            except Exception as e:
+                print(f"[TRANSCRIPTION ERROR] {e}")
+                updated_transcript.append({
+                    "role": entry["role"],
+                    "message": "[unrecognized audio]"
+                })
+        else:
+            updated_transcript.append(entry)
 
     interview_data = Interview(
-        transcript=transcript,  
-        duration_minutes=session.state.get("duration")
+        transcript=updated_transcript,  
+        duration_minutes=duration_minutes
     )
 
     firestore_db.create_interview(
