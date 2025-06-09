@@ -84,7 +84,7 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
         setState(() => _submitting = false);
         // Check if the loading dialog is still open before trying to close it
         if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop(); // close loading dialog
+        Navigator.of(context).pop(); // close loading dialog
         }
         if (response.success) {
           _showSuccessDialog(response);
@@ -99,7 +99,7 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
         setState(() => _submitting = false);
         // Check if the loading dialog is still open before trying to close it
         if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop(); // close loading dialog
+        Navigator.of(context).pop(); // close loading dialog
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to submit: $e')),
@@ -202,9 +202,9 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
     if (mounted) {
       // Reset submitting state to prevent future callbacks from executing
       setState(() => _submitting = false);
-      Navigator.of(context).pop(); // close dialog
-      
-      widget.onNavigateToDashboard?.call();
+    Navigator.of(context).pop(); // close dialog
+    
+    widget.onNavigateToDashboard?.call();
     }
   }
 
@@ -268,8 +268,8 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    if (response.message.isNotEmpty) ...[
-                      const SizedBox(height: 8),
+              if (response.message.isNotEmpty) ...[
+                const SizedBox(height: 8),
                       Text(
                         'Message: ${response.message}',
                         style: TextStyle(
@@ -277,9 +277,9 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                           color: Colors.grey[600],
                         ),
                       ),
-                    ],
-                    if (response.sessionId != null) ...[
-                      const SizedBox(height: 8),
+              ],
+              if (response.sessionId != null) ...[
+                const SizedBox(height: 8),
                       Text(
                         'Session ID: ${response.sessionId}',
                         style: TextStyle(
@@ -287,9 +287,9 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                           color: Colors.grey[600],
                         ),
                       ),
-                    ],
-                    if (response.workflowId != null) ...[
-                      const SizedBox(height: 8),
+              ],
+              if (response.workflowId != null) ...[
+                const SizedBox(height: 8),
                       Text(
                         'Workflow ID: ${response.workflowId}',
                         style: TextStyle(
@@ -297,9 +297,9 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                           color: Colors.grey[600],
                         ),
                       ),
-                    ],
-                    if (response.completedAgents != null && response.completedAgents!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
+              ],
+              if (response.completedAgents != null && response.completedAgents!.isNotEmpty) ...[
+                const SizedBox(height: 12),
                       const Text(
                         'Completed steps:',
                         style: TextStyle(
@@ -319,9 +319,9 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                           ),
                         ),
                       )),
-                    ],
-                    if (response.processingTime != null) ...[
-                      const SizedBox(height: 8),
+              ],
+              if (response.processingTime != null) ...[
+                const SizedBox(height: 8),
                       Text(
                         'Processing time: ${response.processingTime!.toStringAsFixed(1)} seconds',
                         style: TextStyle(
@@ -329,7 +329,7 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                           color: Colors.grey[600],
                         ),
                       ),
-                    ],
+              ],
                   ],
                 ),
               ),
@@ -349,10 +349,10 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                   style: TextStyle(
                     color: Color(0xFF2E7D32),
                     fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
               ),
+                  textAlign: TextAlign.center,
+          ),
+        ),
               
               const SizedBox(height: 32),
               
@@ -362,15 +362,15 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        _goToDashboard();
-                      },
-                      icon: const Icon(Icons.dashboard),
-                      label: const Text('Go to Dashboard'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF263238),
-                        foregroundColor: Colors.white,
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _goToDashboard();
+            },
+            icon: const Icon(Icons.dashboard),
+            label: const Text('Go to Dashboard'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF263238),
+              foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -390,9 +390,9 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                           fontSize: 14,
                         ),
                       ),
-                    ),
-                  ),
-                ],
+            ),
+          ),
+        ],
               ),
             ],
           ),
