@@ -32,6 +32,9 @@ class _QAPageState extends State<QAPage> {
   // selected tags
   final Set<String> _selectedTags = {};
 
+  // tag filter collapsed state
+  bool _isTagFilterCollapsed = false;
+
   // tag color mapping
   final Map<String, Color> _tagColors = {};
   final List<Color> _availableColors = [
@@ -56,23 +59,29 @@ class _QAPageState extends State<QAPage> {
     return _tagColors[tag]!;
   }
 
-  // get all available tags
-  Set<String> _getAllTags() {
+  // get categorized tags
+  Map<String, List<String>> _getCategorizedTags() {
     final allTags = <String>{};
     for (final qa in recommendedQAs) {
       allTags.addAll(qa.tags);
     }
-    return allTags;
-  }
-
-  // filter QA list
-  List<RecommendedQA> _getFilteredQAs() {
-    if (_selectedTags.isEmpty) {
-      return recommendedQAs;
-    }
-    return recommendedQAs.where((qa) {
-      return qa.tags.any((tag) => _selectedTags.contains(tag));
-    }).toList();
+    
+    // Define tag categories and their order
+    final questionTypes = ['Technical', 'Behavioral', 'Situational', 'CompanySpecific'];
+    final coreSkills = [
+      'Programming', 'SystemDesign', 'Database', 'Security', 'DevOps', 
+      'Frontend', 'Backend', 'Mobile', 'DataScience', 'CloudComputing',
+      'Strategy', 'Analytics', 'Marketing', 'Finance', 'ProjectManagement', 
+      'ProductManagement', 'Leadership', 'Design', 'UXResearch',
+      'Healthcare', 'Education', 'Engineering', 'Research'
+    ];
+    final experienceLevels = ['Entry', 'Mid', 'Senior'];
+    
+    return {
+      'QuestionType': questionTypes.where((tag) => allTags.contains(tag)).toList(),
+      'CoreSkill': coreSkills.where((tag) => allTags.contains(tag)).toList(),
+      'DifficultyLevel': experienceLevels.where((tag) => allTags.contains(tag)).toList(),
+    };
   }
 
   @override
@@ -301,8 +310,8 @@ class _QAPageState extends State<QAPage> {
   }
 
   Widget _buildTagFilter() {
-    final allTags = _getAllTags().toList()..sort();
-    if (allTags.isEmpty) return const SizedBox.shrink();
+    final categorizedTags = _getCategorizedTags();
+    if (categorizedTags.values.every((tags) => tags.isEmpty)) return const SizedBox.shrink();
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,6 +329,22 @@ class _QAPageState extends State<QAPage> {
                 },
                 child: const Text('Clear all', style: TextStyle(fontSize: 12)),
               ),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _isTagFilterCollapsed = !_isTagFilterCollapsed;
+                });
+              },
+              icon: Icon(
+                _isTagFilterCollapsed ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                size: 16,
+              ),
+              label: Text(
+                _isTagFilterCollapsed ? 'Expand' : 'Collapse',
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -329,38 +354,76 @@ class _QAPageState extends State<QAPage> {
             border: Border.all(color: Colors.grey[300]!),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: allTags.map((tag) {
-              final isSelected = _selectedTags.contains(tag);
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    if (isSelected) {
-                      _selectedTags.remove(tag);
-                    } else {
-                      _selectedTags.add(tag);
-                    }
-                  });
-                },
-                child: Chip(
-                  label: Text(tag),
-                  backgroundColor: isSelected ? _getTagColor(tag) : Colors.grey[100],
-                  labelStyle: TextStyle(
-                    fontSize: 12, 
-                    color: isSelected ? const Color(0xFF263238) : Colors.grey[600],
-                    fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                  ),
-                  shape: StadiumBorder(
-                    side: BorderSide(
-                      color: isSelected ? Colors.transparent : Colors.grey[300]!,
-                    ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Always show QuestionType row
+              _buildTagRow('Question Type', categorizedTags['QuestionType'] ?? []),
+              
+              // Show CoreSkill and DifficultyLevel only when expanded
+              if (!_isTagFilterCollapsed) ...[
+                if (categorizedTags['CoreSkill']?.isNotEmpty ?? false) ...[
+                  const SizedBox(height: 8),
+                  _buildTagRow('Core Skill', categorizedTags['CoreSkill']!),
+                ],
+                if (categorizedTags['DifficultyLevel']?.isNotEmpty ?? false) ...[
+                  const SizedBox(height: 8),
+                  _buildTagRow('Difficulty Level', categorizedTags['DifficultyLevel']!),
+                ],
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTagRow(String categoryName, List<String> tags) {
+    if (tags.isEmpty) return const SizedBox.shrink();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          categoryName,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF555555),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: tags.map((tag) {
+            final isSelected = _selectedTags.contains(tag);
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    _selectedTags.remove(tag);
+                  } else {
+                    _selectedTags.add(tag);
+                  }
+                });
+              },
+              child: Chip(
+                label: Text(tag),
+                backgroundColor: isSelected ? _getTagColor(tag) : Colors.grey[100],
+                labelStyle: TextStyle(
+                  fontSize: 11, 
+                  color: isSelected ? const Color(0xFF263238) : Colors.grey[600],
+                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                ),
+                shape: StadiumBorder(
+                  side: BorderSide(
+                    color: isSelected ? Colors.transparent : Colors.grey[300]!,
                   ),
                 ),
-              );
-            }).toList(),
-          ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -479,5 +542,15 @@ class _QAPageState extends State<QAPage> {
         );
       },
     );
+  }
+
+  // filter QA list
+  List<RecommendedQA> _getFilteredQAs() {
+    if (_selectedTags.isEmpty) {
+      return recommendedQAs;
+    }
+    return recommendedQAs.where((qa) {
+      return qa.tags.any((tag) => _selectedTags.contains(tag));
+    }).toList();
   }
 } 
