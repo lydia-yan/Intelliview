@@ -92,13 +92,13 @@ Each question MUST have exactly 3 tags following this logical structure:
 **TAG 2 - Core Skill/Domain (MANDATORY)**:
 Choose the most relevant skill or domain area for the question:
 
-For Technical Roles: "Programming", "SystemDesign", "Database", "Security", "DevOps", "Testing", "Architecture", "API", "Frontend", "Backend", "Mobile", "DataScience", "ArtificialIntelligence", "CloudComputing", "Networking"
+For Technical Roles: "Programming", "SystemDesign", "Database", "Security", "DevOps", "Frontend", "Backend", "Mobile", "DataScience", "CloudComputing"
 
-For Business Roles: "Strategy", "Analytics", "Marketing", "Sales", "Finance", "Operations", "ProjectManagement", "ProductManagement", "BusinessDevelopment", "Consulting", "Leadership"
+For Business Roles: "Strategy", "Analytics", "Marketing", "Finance", "ProjectManagement", "ProductManagement", "Leadership"
 
-For Creative Roles: "Design", "UXResearch", "Branding", "ContentCreation", "VisualDesign", "UserExperience", "CreativeStrategy", "ArtDirection"
+For Creative Roles: "Design", "UXResearch"
 
-For Other Industries: "Healthcare", "Education", "Legal", "Engineering", "Research", "Manufacturing", "Retail", "Hospitality", "NonProfit", "Government"
+For Other Industries: "Healthcare", "Education", "Engineering", "Research"
 
 **TAG 3 - Experience Level (MANDATORY)**:
 - "Entry" - Entry-level, junior positions (0-2 years)
