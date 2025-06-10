@@ -15,7 +15,7 @@ from typing import Optional
 # Add the project root to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from google.adk.agents import SequentialAgent, LlmAgent
+from google.adk.agents import SequentialAgent, LlmAgent, ParallelAgent
 from google.adk.runners import Runner
 from google.adk.tools import google_search
 from google.genai import types
@@ -123,11 +123,16 @@ def create_fresh_agents():
 def create_preparation_workflow(workflow_name: str):
     """Create and configure the SequentialAgent workflow with unique name and fresh agents"""
     summarizer_agent, search_agent, question_generator_agent, answer_generator_agent = create_fresh_agents()
+
+    parallel_agent = ParallelAgent(
+        name="ParallelSummarizerAndSearch",
+        sub_agents=[summarizer_agent, search_agent],
+        description="Runs resume summarization and industry FAQ search in parallel"
+    )
     
     return SequentialAgent(
         sub_agents=[
-            summarizer_agent,
-            search_agent,
+            parallel_agent,
             question_generator_agent,
             answer_generator_agent
         ],
@@ -254,6 +259,9 @@ async def run_preparation_workflow(
         
         event_count = 0
         completed_agents = []
+        agent_start_times = {}  #log time
+        agent_end_times = {}
+
         
         # Process all events
         async for event in runner.run_async(
@@ -262,6 +270,9 @@ async def run_preparation_workflow(
             new_message=content
         ):
             event_count += 1
+            now = time.time()
+            if event.author not in agent_start_times:
+                agent_start_times[event.author] = now
             
             print(f"\n--- Event {event_count}: {event.author} ---")
             
@@ -269,9 +280,11 @@ async def run_preparation_workflow(
                 content_text = event.content.parts[0].text
                 print(f"Content preview: {content_text[:100]}...")
                 
-                if event.is_final_response():
+                if event.is_final_response() and event.author not in agent_end_times:
+                    agent_end_times[event.author] = now
+                    duration = now - agent_start_times[event.author]
                     completed_agents.append(event.author)
-                    print(f"=== {event.author} completed ===")
+                    print(f"=== {event.author} completed in {duration:.2f}s ===")
         
         print(f"\n=== ADK workflow completed ===")
         print(f"Total events: {event_count}")
