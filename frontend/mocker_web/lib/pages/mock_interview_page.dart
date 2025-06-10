@@ -36,6 +36,10 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   bool _loadingWorkflows = true;
   String? _workflowsError;
   
+  // Interview duration selection
+  int _selectedDuration = 15; // default 15 minutes
+  final List<int> _durationOptions = [5, 10, 15, 20, 30, 45, 60];
+  
   // Interview state
   List<ChatMessage> _messages = [];
   final TextEditingController _controller = TextEditingController();
@@ -44,7 +48,13 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   bool _loadingChat = false;
   String? _sessionId;
   bool _wsConnected = false;
+  bool _interviewActuallyStarted = false; // Flag to track if interview actually started
 
+  // Real-time timer state
+  DateTime? _interviewStartTime;
+  Timer? _interviewTimer;
+  Duration _elapsedTime = Duration.zero;
+  
   // Feedback state
   Map<String, dynamic>? _feedbackData;
   bool _loadingFeedback = false;
@@ -99,7 +109,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       // 1. first call /interviews/start API
       final sessionData = await _interviewService.startInterviewSession(
         workflow.id,
-        10, // duration in minutes
+        _selectedDuration, // use user selected duration
         false, // is_audio
       );
 
@@ -112,12 +122,18 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         onMessageReceived: (message) {
           setState(() {
             _messages.add(message);
+            // Mark interview as actually started when first message is received
+            if (!_interviewActuallyStarted) {
+              _interviewActuallyStarted = true;
+            }
           });
           WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
         },
         onDisconnected: () async {
           setState(() => _wsConnected = false);
-          if (_feedbackRequested) return;
+          _stopInterviewTimer(); // stop timer when disconnected
+          // Only trigger feedback flow if interview actually started and not already requested
+          if (_feedbackRequested || !_interviewActuallyStarted) return;
           _feedbackRequested = true;
           if (_sessionId != null && _selectedWorkflow != null) {
             setState(() => _loadingFeedback = true);
@@ -126,6 +142,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         },
         onError: (error) {
           setState(() => _wsConnected = false);
+          _stopInterviewTimer(); // stop timer on error
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('WebSocket error: $error')),
           );
@@ -141,6 +158,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         _messages.clear();
         _loadingChat = false;
       });
+
+      // 5. Start the interview timer
+      _startInterviewTimer();
 
     } catch (e) {
       setState(() {
@@ -163,14 +183,20 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       _feedbackError = null;
       _feedbackRequested = false;
       _pollingAttempts = 0;
+      _elapsedTime = Duration.zero;
+      _interviewStartTime = null;
+      _interviewActuallyStarted = false; // Reset the interview started flag
     });
     _feedbackPollingTimer?.cancel();
+    _stopInterviewTimer();
     _interviewService.disconnectWebSocket();
   }
 
   // end interview method
   Future<void> _endInterview() async {
     if (_sessionId == null) return;
+
+    _stopInterviewTimer(); // stop timer when ending interview
 
     setState(() {
       _loadingFeedback = true;
@@ -235,6 +261,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   void dispose() {
     _controller.dispose();
     _feedbackPollingTimer?.cancel();
+    _stopInterviewTimer();
     _interviewService.disconnectWebSocket();
     super.dispose();
   }
@@ -353,6 +380,77 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
               ),
             ),
             const SizedBox(height: 32),
+            
+            // Interview Duration Selection - Simplified
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.timer,
+                    color: const Color(0xFF263238),
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Interview Duration',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF263238),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: DropdownButton<int>(
+                      value: _selectedDuration,
+                      underline: const SizedBox(),
+                      icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF263238)),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF263238),
+                      ),
+                      items: _durationOptions.map((duration) {
+                        return DropdownMenuItem<int>(
+                          value: duration,
+                          child: Text('${duration} minutes'),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedDuration = value;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 32),
+            
             Expanded(
               child: _loadingWorkflows
                   ? const Center(
@@ -464,6 +562,52 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Timer display section
+                    if (_interviewStartTime != null) Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Elapsed time: ${_formatDuration(_elapsedTime)}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF263238),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatRemainingTime(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _elapsedTime.inMinutes >= _selectedDuration 
+                                  ? Colors.red[600]
+                                  : Colors.grey[600],
+                              fontWeight: _elapsedTime.inMinutes >= _selectedDuration 
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
                         ],
@@ -1372,6 +1516,39 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         }
       },
     );
+  }
+
+  void _startInterviewTimer() {
+    _interviewStartTime = DateTime.now();
+    _interviewTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (Timer timer) {
+        final currentTime = DateTime.now();
+        final elapsedTime = currentTime.difference(_interviewStartTime!);
+        setState(() => _elapsedTime = elapsedTime);
+      },
+    );
+  }
+
+  void _stopInterviewTimer() {
+    _interviewTimer?.cancel();
+  }
+
+  // Format duration to MM:SS format
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  // Format remaining time
+  String _formatRemainingTime() {
+    final totalDuration = Duration(minutes: _selectedDuration);
+    final remaining = totalDuration - _elapsedTime;
+    if (remaining.isNegative) {
+      return 'Time out: ${_formatDuration(_elapsedTime - totalDuration)}';
+    }
+    return 'Remaining time: ${_formatDuration(remaining)}';
   }
 }
 
