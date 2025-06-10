@@ -55,7 +55,7 @@ def init_user_profile(user=Depends(verify_token)):
     existing = firestore_db.get_profile(user["uid"])
 
     # If new user, or want to update on every login
-    if not existing:
+    if not existing["data"]:
         profile_data = Profile(
             name=user.get("name", ""),
             email=user.get("email", ""),
@@ -69,7 +69,7 @@ def init_user_profile(user=Depends(verify_token)):
             "name": user.get("name", ""), 
             "email": user.get("email", ""), # keep this 
             "photoURL": user.get("picture", ""),
-            "isNew": existing is None
+            "isNew": existing["data"] is None
         }
     }
 
@@ -233,6 +233,31 @@ async def start_workflow_with_pdf(
         if not resume_text or len(resume_text.strip()) < pdf_config.MIN_TEXT_LENGTH:
             raise EmptyPDFError(f"Extracted resume text is too short (less than {pdf_config.MIN_TEXT_LENGTH} characters)")
         
+        # Update user profile with provided social links and additional info
+        if linkedin_link or github_link or portfolio_link or additional_info:
+            try:
+                # Get current profile
+                current_profile = firestore_db.get_profile(user_id)
+                current_data = current_profile.get("data", {}) or {}
+                
+                # Create updated profile with new social links
+                updated_profile = Profile(
+                    name=current_data.get("name", user.get("name", "")),
+                    email=current_data.get("email", user.get("email", "")),
+                    photoURL=current_data.get("photoURL", user.get("picture", "")),
+                    linkedinLink=linkedin_link if linkedin_link else current_data.get("linkedinLink"),
+                    githubLink=github_link if github_link else current_data.get("githubLink"),
+                    portfolioLink=portfolio_link if portfolio_link else current_data.get("portfolioLink"),
+                    additionalInfo=additional_info if additional_info else current_data.get("additionalInfo")
+                )
+                
+                # Update profile in database
+                firestore_db.create_or_update_profile(user_id, updated_profile)
+                print(f"Updated user profile with social links for user {user_id}")
+            except Exception as profile_error:
+                print(f"Warning: Failed to update user profile: {profile_error}")
+                # Continue with workflow even if profile update fails
+        
         # Start the preparation workflow
         workflow_result = await run_preparation_workflow(
             user_id=user_id,
@@ -294,6 +319,31 @@ async def start_workflow_with_text(
         # Validate resume text
         if not resume_text or len(resume_text.strip()) < pdf_config.MIN_TEXT_LENGTH:
             raise HTTPException(status_code=400, detail=f"Resume text is too short (less than {pdf_config.MIN_TEXT_LENGTH} characters)")        
+        
+        # Update user profile with provided social links and additional info
+        if linkedin_link or github_link or portfolio_link or additional_info:
+            try:
+                # Get current profile
+                current_profile = firestore_db.get_profile(user_id)
+                current_data = current_profile.get("data", {}) or {}
+                
+                # Create updated profile with new social links
+                updated_profile = Profile(
+                    name=current_data.get("name", user.get("name", "")),
+                    email=current_data.get("email", user.get("email", "")),
+                    photoURL=current_data.get("photoURL", user.get("picture", "")),
+                    linkedinLink=linkedin_link if linkedin_link else current_data.get("linkedinLink"),
+                    githubLink=github_link if github_link else current_data.get("githubLink"),
+                    portfolioLink=portfolio_link if portfolio_link else current_data.get("portfolioLink"),
+                    additionalInfo=additional_info if additional_info else current_data.get("additionalInfo")
+                )
+                
+                # Update profile in database
+                firestore_db.create_or_update_profile(user_id, updated_profile)
+                print(f"Updated user profile with social links for user {user_id}")
+            except Exception as profile_error:
+                print(f"Warning: Failed to update user profile: {profile_error}")
+                # Continue with workflow even if profile update fails
         
         # Start the preparation workflow
         workflow_result = await run_preparation_workflow(
