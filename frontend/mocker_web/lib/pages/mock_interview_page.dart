@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import '../models/workflow.dart';
 import '../models/interview.dart';
@@ -8,13 +10,17 @@ import '../theme/app_theme.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:typed_data';
+import '../utils/audio.dart';
 
 // interview state enum
 enum InterviewState {
-  selectWorkflow,    // select workflow
-  interviewing,      // interviewing
-  showingFeedback    // showing feedback
+  selectWorkflow, // select workflow
+  interviewing, // interviewing
+  showingFeedback, // showing feedback
 }
+
+enum InputMode { audio, chat }
 
 class MockInterviewPage extends StatefulWidget {
   const MockInterviewPage({super.key});
@@ -26,16 +32,19 @@ class MockInterviewPage extends StatefulWidget {
 class _MockInterviewPageState extends State<MockInterviewPage> {
   final WorkflowService _workflowService = WorkflowService();
   final InterviewService _interviewService = InterviewService();
-  
+
+  // Audio recording variables
+  bool _isRecording = false;
+
   // Interview state management
   InterviewState _currentState = InterviewState.selectWorkflow;
-  
+
   // Workflow selection state
   Workflow? _selectedWorkflow;
   List<Workflow> _availableWorkflows = [];
   bool _loadingWorkflows = true;
   String? _workflowsError;
-  
+
   // Interview state
   List<ChatMessage> _messages = [];
   final TextEditingController _controller = TextEditingController();
@@ -44,17 +53,18 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   bool _loadingChat = false;
   String? _sessionId;
   bool _wsConnected = false;
+  InputMode _selectedInputMode = InputMode.chat;
 
   // Feedback state
   Map<String, dynamic>? _feedbackData;
   bool _loadingFeedback = false;
   String? _feedbackError;
   bool _feedbackRequested = false;
-  
+
   // Polling state
   Timer? _feedbackPollingTimer;
   int _pollingAttempts = 0;
-  static const int _maxPollingAttempts = 30; 
+  static const int _maxPollingAttempts = 30;
   static const Duration _pollingInterval = Duration(seconds: 2);
 
   @override
@@ -69,13 +79,13 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         _loadingWorkflows = true;
         _workflowsError = null;
       });
-      
+
       // get all workflows, then filter out the ones that are not prepared (have personalExperience)
       final allWorkflows = await _workflowService.getWorkflows();
       final availableWorkflows = allWorkflows
           .where((workflow) => workflow.personalExperience != null)
           .toList();
-      
+
       setState(() {
         _availableWorkflows = availableWorkflows;
         _loadingWorkflows = false;
@@ -100,7 +110,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       final sessionData = await _interviewService.startInterviewSession(
         workflow.id,
         10, // duration in minutes
-        false, // is_audio
+        _selectedInputMode == InputMode.audio, // is_audio
       );
 
       // 2. get connection information from API response
@@ -113,7 +123,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
           setState(() {
             _messages.add(message);
           });
-          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _scrollToBottom(),
+          );
         },
         onDisconnected: () async {
           setState(() => _wsConnected = false);
@@ -126,30 +138,29 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         },
         onError: (error) {
           setState(() => _wsConnected = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('WebSocket error: $error')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('WebSocket error: $error')));
         },
       );
 
       // 4. connect WebSocket
       await _interviewService.connectWebSocket(sessionId, websocketParameter);
-      
+
       setState(() {
         _sessionId = sessionId;
         _wsConnected = _interviewService.isWebSocketConnected;
         _messages.clear();
         _loadingChat = false;
       });
-
     } catch (e) {
       setState(() {
         _loadingChat = false;
         _wsConnected = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to start interview: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to start interview: $e')));
     }
   }
 
@@ -178,13 +189,15 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     });
 
     try {
-      // 1. send end signal through WebSocket 
+      // 1. send end signal through WebSocket
       if (_wsConnected) {
-        _interviewService.sendMessage(json.encode({
-          'type': 'control',
-          'action': 'end_interview',
-          'reason': 'user_stopped'
-        }));
+        _interviewService.sendMessage(
+          json.encode({
+            'type': 'control',
+            'action': 'end_interview',
+            'reason': 'user_stopped',
+          }),
+        );
       }
 
       // 2. disconnect WebSocket
@@ -194,38 +207,41 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         _feedbackError = e.toString();
         _loadingFeedback = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to end interview: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to end interview: $e')));
     }
   }
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _selectedWorkflow == null || !_interviewService.isWebSocketConnected) return;
-    
+    if (text.isEmpty ||
+        _selectedWorkflow == null ||
+        !_interviewService.isWebSocketConnected)
+      return;
+
     final userMessage = ChatMessage(
       id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
       role: 'user',
       content: text,
       timestamp: DateTime.now(),
     );
-    
+
     setState(() {
       _messages.add(userMessage);
       _controller.clear();
       _sending = true;
     });
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-    
+
     try {
       // send to WebSocket
       _interviewService.sendMessage(text);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send message: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
     } finally {
       setState(() => _sending = false);
     }
@@ -235,6 +251,12 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   void dispose() {
     _controller.dispose();
     _feedbackPollingTimer?.cancel();
+
+    // Stop recording if active
+    if (_isRecording) {
+      stopAudioInterop();
+    }
+
     _interviewService.disconnectWebSocket();
     super.dispose();
   }
@@ -244,14 +266,47 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     return Column(
       children: [
         // NavBar
-        NavBar(
-          title: 'Mock Interview',
-          actions: _buildNavBarActions(),
-        ),
-        
+        NavBar(title: 'Mock Interview', actions: _buildNavBarActions()),
+
         // Main content
-        Expanded(
-          child: _buildCurrentPage(),
+        Expanded(child: _buildCurrentPage()),
+      ],
+    );
+  }
+
+  Widget _buildInputModeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Choose Input Mode",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Radio<InputMode>(
+              value: InputMode.chat,
+              groupValue: _selectedInputMode,
+              onChanged: (mode) {
+                setState(() {
+                  _selectedInputMode = mode!;
+                });
+              },
+            ),
+            const Text('Type Responses'),
+            const SizedBox(width: 20),
+            Radio<InputMode>(
+              value: InputMode.audio,
+              groupValue: _selectedInputMode,
+              onChanged: (mode) {
+                setState(() {
+                  _selectedInputMode = mode!;
+                });
+              },
+            ),
+            const Text('Use Microphone'),
+          ],
         ),
       ],
     );
@@ -267,21 +322,24 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             margin: const EdgeInsets.only(right: 8),
             child: ElevatedButton.icon(
               onPressed: _loadingFeedback ? null : _endInterview,
-              icon: _loadingFeedback 
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.stop, size: 18),
+              icon: _loadingFeedback
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.stop, size: 18),
               label: Text(_loadingFeedback ? 'Ending...' : 'STOP Interview'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[600],
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -347,9 +405,130 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             const SizedBox(height: 8),
             Text(
               'Choose one of your prepared workflows to start the mock interview',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 32),
+
+            // Add Input Mode Selector here
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF263238).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.settings_voice,
+                          color: Color(0xFF263238),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        "Choose Input Mode",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF263238),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: _selectedInputMode == InputMode.chat
+                                ? const Color(0xFF263238).withOpacity(0.1)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _selectedInputMode == InputMode.chat
+                                  ? const Color(0xFF263238)
+                                  : Colors.grey[300]!,
+                              width: 2,
+                            ),
+                          ),
+                          child: RadioListTile<InputMode>(
+                            value: InputMode.chat,
+                            groupValue: _selectedInputMode,
+                            onChanged: (mode) {
+                              setState(() {
+                                _selectedInputMode = mode!;
+                              });
+                            },
+                            title: const Row(
+                              children: [
+                                Icon(Icons.keyboard, size: 20),
+                                SizedBox(width: 8),
+                                Text('Type Responses'),
+                              ],
+                            ),
+                            subtitle: const Text(
+                              'Use keyboard to type your answers',
+                            ),
+                            activeColor: const Color(0xFF263238),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: _selectedInputMode == InputMode.audio
+                                ? const Color(0xFF263238).withOpacity(0.1)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _selectedInputMode == InputMode.audio
+                                  ? const Color(0xFF263238)
+                                  : Colors.grey[300]!,
+                              width: 2,
+                            ),
+                          ),
+                          child: RadioListTile<InputMode>(
+                            value: InputMode.audio,
+                            groupValue: _selectedInputMode,
+                            onChanged: (mode) {
+                              setState(() {
+                                _selectedInputMode = mode!;
+                              });
+                            },
+                            title: const Row(
+                              children: [
+                                Icon(Icons.mic, size: 20),
+                                SizedBox(width: 8),
+                                Text('Use Microphone'),
+                              ],
+                            ),
+                            subtitle: const Text('Speak your answers aloud'),
+                            activeColor: const Color(0xFF263238),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 32),
@@ -366,40 +545,51 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                       ),
                     )
                   : _availableWorkflows.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.work_off, size: 64, color: Colors.grey[400]),
-                              const SizedBox(height: 16),
-                              Text(
-                                _workflowsError ?? 'No workflows available',
-                                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Please complete workflow preparation in the Prepare section first',
-                                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.work_off,
+                            size: 64,
+                            color: Colors.grey[400],
                           ),
-                        )
-                      : GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          const SizedBox(height: 16),
+                          Text(
+                            _workflowsError ?? 'No workflows available',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Please complete workflow preparation in the Prepare section first',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : GridView.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
                             mainAxisSpacing: 20,
                             crossAxisSpacing: 20,
                             childAspectRatio: 1.3,
                           ),
-                          itemCount: _availableWorkflows.length,
-                          itemBuilder: (context, index) {
-                            final workflow = _availableWorkflows[index];
-                            return _WorkflowCard(
-                              workflow: workflow,
-                              onTap: () => _selectWorkflow(workflow),
-                            );
-                          },
-                        ),
+                      itemCount: _availableWorkflows.length,
+                      itemBuilder: (context, index) {
+                        final workflow = _availableWorkflows[index];
+                        return _WorkflowCard(
+                          workflow: workflow,
+                          onTap: () => _selectWorkflow(workflow),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -408,6 +598,12 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   }
 
   Widget _buildChatPage() {
+    return _selectedInputMode == InputMode.audio
+        ? _buildAudioInterviewPage()
+        : _buildTextChatPage();
+  }
+
+  Widget _buildTextChatPage() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
       child: Center(
@@ -473,7 +669,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Chat area - redesigned
               Expanded(
                 child: Container(
@@ -518,61 +714,84 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                                 ),
                               )
                             : _messages.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      'Interview will start once connected',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey[500],
+                            ? Center(
+                                child: Text(
+                                  'Interview will start once connected',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                controller: _scrollController,
+                                padding: const EdgeInsets.all(20),
+                                itemCount: _messages.length,
+                                itemBuilder: (context, idx) {
+                                  final msg = _messages[idx];
+                                  final isUser = msg.role == 'user';
+                                  return Align(
+                                    alignment: isUser
+                                        ? Alignment.centerRight
+                                        : Alignment.centerLeft,
+                                    child: Container(
+                                      constraints: BoxConstraints(
+                                        maxWidth:
+                                            MediaQuery.of(context).size.width *
+                                            0.7,
                                       ),
-                                    ),
-                                  )
-                                : ListView.builder(
-                                    controller: _scrollController,
-                                    padding: const EdgeInsets.all(20),
-                                    itemCount: _messages.length,
-                                    itemBuilder: (context, idx) {
-                                      final msg = _messages[idx];
-                                      final isUser = msg.role == 'user';
-                                      return Align(
-                                        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                                        child: Container(
-                                          constraints: BoxConstraints(
-                                            maxWidth: MediaQuery.of(context).size.width * 0.7,
-                                          ),
-                                          margin: const EdgeInsets.symmetric(vertical: 8),
-                                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: isUser ? AppTheme.primaryBlue : AppTheme.surfaceWhite,
-                                            border: isUser ? null : Border.all(color: AppTheme.borderGray),
-                                            borderRadius: BorderRadius.only(
-                                              topLeft: const Radius.circular(18),
-                                              topRight: const Radius.circular(18),
-                                              bottomLeft: Radius.circular(isUser ? 18 : 6),
-                                              bottomRight: Radius.circular(isUser ? 6 : 18),
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(alpha: 0.06),
-                                                blurRadius: 6,
-                                                offset: const Offset(0, 2),
+                                      margin: const EdgeInsets.symmetric(
+                                        vertical: 8,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                        horizontal: 16,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isUser
+                                            ? AppTheme.primaryBlue
+                                            : AppTheme.surfaceWhite,
+                                        border: isUser
+                                            ? null
+                                            : Border.all(
+                                                color: AppTheme.borderGray,
                                               ),
-                                            ],
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: const Radius.circular(18),
+                                          topRight: const Radius.circular(18),
+                                          bottomLeft: Radius.circular(
+                                            isUser ? 18 : 6,
                                           ),
-                                          child: Text(
-                                            msg.content,
-                                            style: TextStyle(
-                                              color: isUser ? Colors.white : AppTheme.darkGray,
-                                              fontSize: 15,
-                                              height: 1.4,
-                                            ),
+                                          bottomRight: Radius.circular(
+                                            isUser ? 6 : 18,
                                           ),
                                         ),
-                                      );
-                                    },
-                                  ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.06,
+                                            ),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        msg.content,
+                                        style: TextStyle(
+                                          color: isUser
+                                              ? Colors.white
+                                              : AppTheme.darkGray,
+                                          fontSize: 15,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                       ),
-                      
+
                       // Input area
                       Container(
                         padding: const EdgeInsets.all(20),
@@ -588,7 +807,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                                 decoration: BoxDecoration(
                                   color: AppTheme.surfaceWhite,
                                   borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(color: AppTheme.borderGray),
+                                  border: Border.all(
+                                    color: AppTheme.borderGray,
+                                  ),
                                 ),
                                 child: TextField(
                                   controller: _controller,
@@ -602,7 +823,10 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                                     hintText: 'Type your answer...',
                                     hintStyle: TextStyle(color: Colors.grey),
                                     border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
                                   ),
                                   onSubmitted: (_) => _sendMessage(),
                                 ),
@@ -615,7 +839,9 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                                 borderRadius: BorderRadius.circular(24),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                                    color: AppTheme.primaryBlue.withValues(
+                                      alpha: 0.3,
+                                    ),
                                     blurRadius: 6,
                                     offset: const Offset(0, 2),
                                   ),
@@ -654,6 +880,528 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     );
   }
 
+  void _toggleRecording() async {
+    if (!_wsConnected) return;
+
+    if (!_isRecording) {
+      await _startRecording();
+    } else {
+      await _stopRecording();
+    }
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      setState(() {
+        _isRecording = true;
+        _sending = true;
+      });
+
+      // Check if audio interop functions are available
+      if (!checkAudioInteropFunctions()) {
+        throw Exception('Audio interop functions not found');
+      }
+
+      // Start recording with callback
+      startAudioInterop((Uint8List pcmBuffer) {
+        try {
+          log('Received audio buffer: ${pcmBuffer.length} bytes');
+          if (pcmBuffer.isNotEmpty && _wsConnected) {
+            final base64Pcm = base64Encode(pcmBuffer);
+            _interviewService.sendMessage(
+              json.encode({'mime_type': 'audio/pcm', 'data': base64Pcm}),
+            );
+            setState(() {
+              _messages.add(
+                ChatMessage(
+                  id: 'audio_${DateTime.now().millisecondsSinceEpoch}',
+                  role: 'user',
+                  content: '[Audio sent]',
+                  timestamp: DateTime.now(),
+                ),
+              );
+            });
+            _scrollToBottom();
+          }
+        } catch (e) {
+          log('Error processing audio data: $e');
+        }
+      });
+    } catch (e) {
+      String errorMessage = 'Failed to start recording';
+      final errorString = e.toString();
+      if (errorString.contains('NotAllowedError') ||
+          errorString.contains('Permission denied')) {
+        errorMessage =
+            'Microphone permission denied. Please allow microphone access and try again.';
+      } else if (errorString.contains('NotFoundError')) {
+        errorMessage =
+            'No microphone found. Please check your microphone connection.';
+      } else if (errorString.contains('NotSupportedError')) {
+        errorMessage = 'Audio recording is not supported in this browser.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Help',
+              onPressed: _showMicrophoneHelp,
+            ),
+          ),
+        );
+      }
+
+      setState(() {
+        _isRecording = false;
+        _sending = false;
+      });
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      stopAudioInterop();
+      setState(() {
+        _isRecording = false;
+        _sending = false;
+      });
+      log('Stopped audio recording');
+    } catch (e) {
+      log('Failed to stop recording: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to stop recording: $e')));
+      }
+      setState(() {
+        _isRecording = false;
+        _sending = false;
+      });
+    }
+  }
+
+  void _playReceivedAudio(String base64Audio) {
+    try {
+      playPcm(base64Audio);
+      log('Playing received audio');
+    } catch (e) {
+      log('Error playing audio: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error playing audio: $e')));
+    }
+  }
+
+  void _showMicrophoneHelp() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Microphone Access Required'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('To use voice recording, please:'),
+            const SizedBox(height: 12),
+            const Text(
+              '1. Click the microphone icon in your browser\'s address bar',
+            ),
+            const Text('2. Select "Allow" for microphone access'),
+            const Text('3. Refresh the page if needed'),
+            const SizedBox(height: 12),
+            Text(
+              'Note: Make sure your microphone is connected and working.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAudioInterviewPage() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Column(
+            children: [
+              // Top info bar
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.mic, color: Colors.red, size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Audio Interview: ${_selectedWorkflow?.position}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF263238),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Company: ${_selectedWorkflow?.company}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _wsConnected
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _wsConnected ? Colors.green : Colors.red,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _wsConnected ? Colors.green : Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _wsConnected ? 'Connected' : 'Disconnected',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: _wsConnected
+                                  ? Colors.green[700]
+                                  : Colors.red[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Main audio interface
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.grey[200]!),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: _loadingChat
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                width: 48,
+                                height: 48,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 4,
+                                  color: Color(0xFF263238),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                'Starting audio interview session...',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            // Current question/response area
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(32),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // AI Speaking indicator
+                                    Container(
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF263238,
+                                        ).withOpacity(0.05),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 48,
+                                        color: const Color(0xFF263238),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+
+                                    // Current message display
+                                    if (_messages.isNotEmpty) ...[
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[50],
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.grey[200]!,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.chat_bubble_outline,
+                                                  size: 16,
+                                                  color: Colors.grey[600],
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'Current Question',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              _messages.last.content,
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                height: 1.5,
+                                                color: Color(0xFF263238),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 32),
+                                    ] else ...[
+                                      Text(
+                                        'Waiting for interview to begin...',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.grey[500],
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 32),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Audio controls area
+                            Container(
+                              padding: const EdgeInsets.all(32),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(24),
+                                  bottomRight: Radius.circular(24),
+                                ),
+                                border: Border(
+                                  top: BorderSide(color: Colors.grey[200]!),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  // Instructions
+                                  Text(
+                                    'Speak your answer clearly into your microphone',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 24),
+
+                                  // Audio recording widget would go here
+                                  Container(
+                                    height: 120,
+                                    width: 120,
+                                    decoration: BoxDecoration(
+                                      color: _sending
+                                          ? Colors.red.withOpacity(0.1)
+                                          : Colors.blue.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: _sending
+                                            ? Colors.red
+                                            : Colors.blue,
+                                        width: 3,
+                                      ),
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(60),
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(60),
+                                        onTap: _wsConnected
+                                            ? _toggleRecording
+                                            : null,
+                                        child: Center(
+                                          child: _sending
+                                              ? Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.stop,
+                                                      size: 32,
+                                                      color: Colors.red,
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      'Recording...',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.red,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                              : Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.mic,
+                                                      size: 32,
+                                                      color: _wsConnected
+                                                          ? Colors.blue
+                                                          : Colors.grey,
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      _wsConnected
+                                                          ? 'Tap to Speak'
+                                                          : 'Connecting...',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: _wsConnected
+                                                            ? Colors.blue
+                                                            : Colors.grey,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 24),
+
+                                  // Status text
+                                  Text(
+                                    _sending
+                                        ? 'Recording your response...'
+                                        : _wsConnected
+                                        ? 'Ready to record your answer'
+                                        : 'Connecting to interview session...',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFeedbackPage() {
     if (_loadingFeedback) {
       return Center(
@@ -680,10 +1428,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             const SizedBox(height: 8),
             Text(
               'AI is analyzing your interview performance',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -766,10 +1511,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             const SizedBox(height: 8),
             Text(
               'AI is analyzing your interview performance',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -787,9 +1529,11 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     }
 
     final positives = feedbackContent['positives'] as List<dynamic>? ?? [];
-    final improvementAreas = feedbackContent['improvementAreas'] as List<dynamic>? ?? [];
+    final improvementAreas =
+        feedbackContent['improvementAreas'] as List<dynamic>? ?? [];
     final resources = feedbackContent['resources'] as List<dynamic>? ?? [];
-    final reflectionPrompt = feedbackContent['reflectionPrompt'] as List<dynamic>? ?? [];
+    final reflectionPrompt =
+        feedbackContent['reflectionPrompt'] as List<dynamic>? ?? [];
     final overallRating = feedbackContent['overallRating'] ?? 0;
     final focusTags = feedbackContent['focusTags'] as List<dynamic>? ?? [];
 
@@ -804,7 +1548,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
               children: [
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(24), 
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -814,16 +1558,16 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                         const Color(0xFF263238).withOpacity(0.8),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(16), 
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
-                        blurRadius: 15, 
-                        offset: const Offset(0, 6), 
+                        blurRadius: 15,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
-                  child: Row( 
+                  child: Row(
                     children: [
                       Expanded(
                         flex: 2,
@@ -834,14 +1578,14 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                               children: [
                                 Icon(
                                   Icons.assessment,
-                                  size: 32, 
+                                  size: 32,
                                   color: Colors.white,
                                 ),
                                 const SizedBox(width: 12),
                                 const Text(
                                   'Interview Feedback',
                                   style: TextStyle(
-                                    fontSize: 24, 
+                                    fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
@@ -852,14 +1596,14 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                             Text(
                               '${_selectedWorkflow?.position} at ${_selectedWorkflow?.company}',
                               style: TextStyle(
-                                fontSize: 14, 
+                                fontSize: 14,
                                 color: Colors.white.withOpacity(0.9),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      
+
                       Expanded(
                         flex: 1,
                         child: Column(
@@ -880,9 +1624,11 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: List.generate(5, (index) {
                                     return Icon(
-                                      index < overallRating ? Icons.star : Icons.star_border,
+                                      index < overallRating
+                                          ? Icons.star
+                                          : Icons.star_border,
                                       color: Colors.amber,
-                                      size: 20, 
+                                      size: 20,
                                     );
                                   }),
                                 ),
@@ -897,7 +1643,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                                 ),
                               ],
                             ),
-                            
+
                             // Focus Tags
                             if (focusTags.isNotEmpty) ...[
                               const SizedBox(height: 12),
@@ -905,25 +1651,39 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                                 alignment: WrapAlignment.end,
                                 spacing: 6,
                                 runSpacing: 6,
-                                children: focusTags.take(3).map((tag) => Container( 
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    tag.toString(),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.white.withOpacity(0.9),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                )).toList(),
+                                children: focusTags
+                                    .take(3)
+                                    .map(
+                                      (tag) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white.withOpacity(
+                                              0.3,
+                                            ),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          tag.toString(),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white.withOpacity(
+                                              0.9,
+                                            ),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                             ],
                           ],
@@ -932,8 +1692,8 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                     ],
                   ),
                 ),
-                
-                const SizedBox(height: 24), 
+
+                const SizedBox(height: 24),
 
                 // Positives section
                 if (positives.isNotEmpty) ...[
@@ -1017,33 +1777,37 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             ],
           ),
           const SizedBox(height: 16),
-          ...items.map((item) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(top: 8, right: 12),
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
+          ...items
+              .map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(top: 8, right: 12),
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          item,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[700],
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Expanded(
-                  child: Text(
-                    item,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )).toList(),
+              )
+              .toList(),
         ],
       ),
     );
@@ -1076,7 +1840,11 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.trending_up, color: Colors.orange, size: 24),
+                child: const Icon(
+                  Icons.trending_up,
+                  color: Colors.orange,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -1094,7 +1862,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             final topic = area['topic'] ?? '';
             final example = area['example'] ?? '';
             final suggestion = area['suggestion'] ?? '';
-            
+
             return Container(
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(16),
@@ -1168,7 +1936,11 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.library_books, color: Colors.blue, size: 24),
+                child: const Icon(
+                  Icons.library_books,
+                  color: Colors.blue,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -1185,7 +1957,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
           ...resources.map((resource) {
             final title = resource['title'] ?? '';
             final link = resource['link'] ?? '';
-            
+
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               child: InkWell(
@@ -1193,7 +1965,10 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                   try {
                     final uri = Uri.parse(link);
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('cannot open link: $link')),
@@ -1226,7 +2001,11 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                           ),
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, color: Colors.blue, size: 16),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.blue,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),
@@ -1265,7 +2044,11 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                   color: Colors.purple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.psychology, color: Colors.purple, size: 24),
+                child: const Icon(
+                  Icons.psychology,
+                  color: Colors.purple,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -1288,32 +2071,36 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
             ),
           ),
           const SizedBox(height: 16),
-          ...prompts.map((prompt) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '• ',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.purple,
-                    fontWeight: FontWeight.bold,
+          ...prompts
+              .map(
+                (prompt) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '• ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.purple,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          prompt,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[700],
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Expanded(
-                  child: Text(
-                    prompt,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )).toList(),
+              )
+              .toList(),
         ],
       ),
     );
@@ -1335,43 +2122,46 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
 
   void _startFeedbackPolling() {
     _pollingAttempts = 0;
-    _feedbackPollingTimer = Timer.periodic(
-      _pollingInterval,
-      (Timer timer) async {
-        _pollingAttempts++;
-        
-        try {
-          final feedbackResponse = await _interviewService.getInterviewFeedback(_selectedWorkflow!.id, _sessionId!);
-          final feedbackContent = feedbackResponse['data'];
-          
-          if (feedbackContent != null) {
-            // get valid feedback, stop polling
-            timer.cancel();
-            setState(() {
-              _feedbackData = feedbackResponse;
-              _currentState = InterviewState.showingFeedback;
-              _loadingFeedback = false;
-            });
-          } else if (_pollingAttempts >= _maxPollingAttempts) {
-            // reach max attempts, stop polling and show error
-            timer.cancel();
-            setState(() {
-              _feedbackError = 'Feedback generation timed out after ${_maxPollingAttempts * 2} seconds';
-              _loadingFeedback = false;
-            });
-          }
-          // if feedbackContent is null and not reached max attempts, continue polling
-        } catch (e) {
-          if (_pollingAttempts >= _maxPollingAttempts) {
-            timer.cancel();
-            setState(() {
-              _feedbackError = e.toString();
-              _loadingFeedback = false;
-            });
-          }
+    _feedbackPollingTimer = Timer.periodic(_pollingInterval, (
+      Timer timer,
+    ) async {
+      _pollingAttempts++;
+
+      try {
+        final feedbackResponse = await _interviewService.getInterviewFeedback(
+          _selectedWorkflow!.id,
+          _sessionId!,
+        );
+        final feedbackContent = feedbackResponse['data'];
+
+        if (feedbackContent != null) {
+          // get valid feedback, stop polling
+          timer.cancel();
+          setState(() {
+            _feedbackData = feedbackResponse;
+            _currentState = InterviewState.showingFeedback;
+            _loadingFeedback = false;
+          });
+        } else if (_pollingAttempts >= _maxPollingAttempts) {
+          // reach max attempts, stop polling and show error
+          timer.cancel();
+          setState(() {
+            _feedbackError =
+                'Feedback generation timed out after ${_maxPollingAttempts * 2} seconds';
+            _loadingFeedback = false;
+          });
         }
-      },
-    );
+        // if feedbackContent is null and not reached max attempts, continue polling
+      } catch (e) {
+        if (_pollingAttempts >= _maxPollingAttempts) {
+          timer.cancel();
+          setState(() {
+            _feedbackError = e.toString();
+            _loadingFeedback = false;
+          });
+        }
+      }
+    });
   }
 }
 
@@ -1431,7 +2221,10 @@ class _WorkflowCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.lightBlue,
                     borderRadius: BorderRadius.circular(20),
@@ -1452,4 +2245,4 @@ class _WorkflowCard extends StatelessWidget {
       ),
     );
   }
-} 
+}

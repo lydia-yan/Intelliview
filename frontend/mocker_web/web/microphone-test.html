@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Microphone Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px 0;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #status {
+      margin: 20px 0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #dff0d8;
+      color: #3c763d;
+    }
+    .error {
+      background-color: #f2dede;
+      color: #a94442;
+    }
+  </style>
+</head>
+<body>
+  <h1>Microphone Access Test</h1>
+  <p>This page tests if your browser can access your microphone.</p>
+  
+  <button id="testButton">Test Microphone Access</button>
+  <div id="status"></div>
+  
+  <script>
+    document.getElementById('testButton').addEventListener('click', function() {
+      const statusDiv = document.getElementById('status');
+      statusDiv.innerHTML = 'Testing microphone access...';
+      statusDiv.className = '';
+      
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function(stream) {
+          statusDiv.innerHTML = 'SUCCESS: Microphone access granted! Your microphone is working.';
+          statusDiv.className = 'success';
+          
+          // Stop all tracks
+          stream.getTracks().forEach(track => track.stop());
+        })
+        .catch(function(err) {
+          statusDiv.innerHTML = 'ERROR: ' + err.name + ' - ' + err.message;
+          statusDiv.className = 'error';
+          
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            statusDiv.innerHTML += '<br><br>You denied permission to use the microphone. ' +
+              'Please check your browser settings and allow microphone access for this site.';
+          } else if (err.name === 'NotFoundError') {
+            statusDiv.innerHTML += '<br><br>No microphone was found. Please check your microphone connection.';
+          } else if (err.name === 'NotReadableError') {
+            statusDiv.innerHTML += '<br><br>Your microphone is busy or not functioning properly.';
+          }
+        });
+    });
+  </script>
+</body>
+</html>

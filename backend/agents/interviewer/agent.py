@@ -8,11 +8,12 @@ from backend.data.database import firestore_db  # Adjust this path if needed
 from backend.data.schemas import Interview
 from google.adk.runners import Runner, RunConfig
 from google.adk.agents import LiveRequestQueue
-from google.genai.types import Content, Part, Blob
+from google.genai.types import Content, Part, Blob, Modality
 import base64
 from backend.agents.interview_judge.agent import _run_judge_from_session
 from backend.coordinator.session_manager import session_service
 from backend.tools.transcript_utils import transcribe_audio_bytes
+
 
 
 
@@ -71,6 +72,7 @@ async def start_agent_session(session_id, user_id, workflow_id, duration_minutes
     )
 
     modality = "AUDIO" if is_audio else "TEXT"
+
     run_config = RunConfig(response_modalities=[modality])
     live_request_queue = LiveRequestQueue()
 

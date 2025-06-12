@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 
 class ChatMessage {
@@ -5,20 +6,29 @@ class ChatMessage {
   final String role; // 'Interviewer' or 'Candidate'
   final String content;
   final DateTime timestamp;
+  final Uint8List? audioData; // Add this field
 
   ChatMessage({
     required this.id,
     required this.role,
     required this.content,
     required this.timestamp,
+    this.audioData, // Add this parameter
   });
+
+  // Add getter to check if message has audio
+  bool get hasAudio => audioData != null && audioData!.isNotEmpty;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
       id: json['id'] ?? json['interviewId'] ?? json['messageId'] ?? '',
       role: json['role'] as String,
       content: json['content'] ?? json['message'] ?? '',
-      timestamp: DateTime.parse(json['timestamp'] ?? json['createAt'] ?? DateTime.now().toIso8601String()),
+      timestamp: DateTime.parse(
+        json['timestamp'] ??
+            json['createAt'] ??
+            DateTime.now().toIso8601String(),
+      ),
     );
   }
 
@@ -115,8 +125,8 @@ class InterviewPrepareResponse {
       sessionId: json['session_id'] as String?,
       workflowId: json['workflow_id'] as String?,
       userId: json['user_id'] as String?,
-      completedAgents: json['completed_agents'] != null 
-          ? List<String>.from(json['completed_agents']) 
+      completedAgents: json['completed_agents'] != null
+          ? List<String>.from(json['completed_agents'])
           : null,
       processingTime: json['processing_time'] as double?,
       error: json['error'] as String?,
@@ -141,16 +151,10 @@ class ChatRequest {
   final String workflowId;
   final String message;
 
-  ChatRequest({
-    required this.workflowId,
-    required this.message,
-  });
+  ChatRequest({required this.workflowId, required this.message});
 
   Map<String, dynamic> toJson() {
-    return {
-      'workflow_id': workflowId,
-      'message': message,
-    };
+    return {'workflow_id': workflowId, 'message': message};
   }
 }
 
@@ -175,4 +179,4 @@ class ChatResponse {
       timestamp: DateTime.parse(json['timestamp'] as String),
     );
   }
-} 
+}
