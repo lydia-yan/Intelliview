@@ -61,10 +61,8 @@
 ### Database & Storage
 - **Firestore** - NoSQL document database for scalable data storage
 - **Firebase Auth** - Authentication and user management
-- **Cloud Storage** - File storage for resumes and documents
 
 ### DevOps & Deployment
-- **Docker** - Containerization for consistent deployments
 - **Google Cloud Platform** - Cloud infrastructure and hosting
 - **GitHub Actions** - CI/CD pipeline automation
 
