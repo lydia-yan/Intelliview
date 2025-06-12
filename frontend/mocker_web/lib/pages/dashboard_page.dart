@@ -94,7 +94,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           children: [
                             Icon(Icons.bubble_chart, color: AppTheme.primaryBlue, size: 32),
                             const SizedBox(width: 10),
-                            Text('Mocker', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppTheme.darkGray)),
+                            Text('Intelliview', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppTheme.darkGray)),
                           ],
                         ),
                       ),

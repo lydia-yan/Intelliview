@@ -1,4 +1,4 @@
-# Mocker - AI Mock Interview Platform (Frontend)
+# Intelliview - AI Mock Interview Platform (Frontend)
 
 A Flutter Web application that provides AI-powered mock interview experiences for job seekers.
 
@@ -13,7 +13,7 @@ A Flutter Web application that provides AI-powered mock interview experiences fo
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/lydia-yan/Mocker
+git clone https://github.com/lydia-yan/Intelliview
 cd frontend/mocker_web
 
 # Install dependencies

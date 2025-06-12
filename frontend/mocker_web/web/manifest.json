@@ -1,11 +1,11 @@
 {
-    "name": "mocker_web",
-    "short_name": "mocker_web",
+    "name": "Intelliview",
+    "short_name": "Intelliview",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "AI-powered mock interview platform for job seekers.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

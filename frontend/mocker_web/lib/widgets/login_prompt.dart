@@ -46,7 +46,7 @@ class LoginPrompt extends StatelessWidget {
             
             // title
             const Text(
-              'Welcome to Mocker',
+              'Welcome to Intelliview',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,

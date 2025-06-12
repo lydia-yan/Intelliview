@@ -189,7 +189,7 @@ async def start_interview(request: InterviewStartRequest, user=Depends(verify_to
 
     # Format WebSocket parameters
     websocket_parameter = (
-        f"?user_id={user["uid"]}&workflow_id={request.workflow_id}"
+        f"?user_id={user['uid']}&workflow_id={request.workflow_id}"
         f"&duration={request.duration}&is_audio={str(request.is_audio).lower()}"
     )
 

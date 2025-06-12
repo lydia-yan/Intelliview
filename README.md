@@ -1,8 +1,8 @@
-# 🎯 Mocker - AI-Powered Interview Preparation Platform
+# 🎯 Intelliview - AI-Powered Interview Preparation Platform
 
 <div align="center">
 
-![Mocker Logo](https://img.shields.io/badge/Mocker-Interview%20AI-blue?style=for-the-badge&logo=robot)
+![Intelliview Logo](https://img.shields.io/badge/Intelliview-Interview%20AI-blue?style=for-the-badge&logo=robot)
 
 **An intelligent platform that helps you ace your job interviews with AI-powered mock interviews and personalized feedback**
 

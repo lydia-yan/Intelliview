@@ -13,11 +13,11 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  runApp(const MockerApp());
+  runApp(const IntelliviewApp());
 }
 
-class MockerApp extends StatelessWidget {
-  const MockerApp({super.key});
+class IntelliviewApp extends StatelessWidget {
+  const IntelliviewApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class MockerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthService()),
       ],
       child: MaterialApp(
-        title: 'Mocker interview preparation',
+        title: 'Intelliview interview preparation',
         theme: AppTheme.lightTheme,
         home: const DashboardPage(),
       ),
