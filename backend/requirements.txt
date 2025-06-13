@@ -113,7 +113,7 @@ jsonpointer==2.1
 MarkupSafe==3.0.2
 matplotlib==3.9.2
 networkx==3.4.2
-openai-whisper==20240930
+openai-whisper==20231101
 pillow==11.2.1
 pyee==11.0.1
 pyls-spyder==0.4.0
