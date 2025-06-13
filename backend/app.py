@@ -11,8 +11,8 @@ origins = [
     "http://localhost:8080",            # for Flutter Web dev
     "http://localhost:5000",            # for Flutter Web dev
     "http://localhost",                 # for Flutter Web dev with any port
-    "https://aiview-fa69f.web.app/",    # for production
-    "https://aiview-fa69f.firebaseapp.com/"
+    "https://aiview-fa69f.web.app",    # for production
+    "https://aiview-fa69f.firebaseapp.com"
 ]
 
 app.add_middleware(
