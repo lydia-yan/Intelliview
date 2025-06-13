@@ -79,8 +79,8 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/lydia-yan/Mocker
-   cd mocker
+   git clone https://github.com/lydia-yan/Intelliview
+   cd Intelliview
    ```
 
 2. **Set up Python environment**
