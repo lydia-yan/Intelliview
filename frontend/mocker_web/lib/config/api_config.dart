@@ -2,7 +2,7 @@ class ApiConfig {
   // Base API configuration
   //static const String baseUrl = 'http://localhost:8000';
   static const String baseUrl =
-      'https://intelliview-1022761324834.europe-west1.run.app';
+      'https://my-backend-app-1022761324834.us-central1.run.app';
 
   // Authentication endpoints
   static const String authInitEndpoint = '/auth/init';

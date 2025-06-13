@@ -13,6 +13,7 @@ RUN pip install -r backend/requirements.txt
 
 # Set Python path so `from backend.xxx` works
 ENV PYTHONPATH="/app"
+ENV PORT=8080
 
 # Expose port (Cloud Run uses 8080 by default)
 EXPOSE 8080
