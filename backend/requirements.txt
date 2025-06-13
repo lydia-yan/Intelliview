@@ -113,12 +113,10 @@ jsonpointer==2.1
 MarkupSafe==3.0.2
 matplotlib==3.9.2
 networkx==3.4.2
-openai-whisper==20231101
+openai-whisper==20231106
 pillow==11.2.1
 pyee==11.0.1
 pyls-spyder==0.4.0
-PyQt5==5.15.10
-PyQtWebEngine==5.15.6
 setuptools==78.1.0
 sympy==1.13.1
 tiktoken==0.9.0
