@@ -9,7 +9,8 @@ import '../data/mock_data.dart';
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', 
+    clientId:
+        '1022761324834-ma82nm7e3cvck3bgv2k6rjnlakn33flm.apps.googleusercontent.com',
     scopes: ['email', 'profile'],
   );
 
@@ -64,7 +65,7 @@ class AuthService extends ChangeNotifier {
       }
 
       debugPrint('Calling /auth/init API...');
-      
+
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}${ApiConfig.authInitEndpoint}'),
         headers: {
@@ -80,12 +81,14 @@ class AuthService extends ChangeNotifier {
         notifyListeners();
         return;
       } else {
-        throw Exception('API returned ${response.statusCode}: ${response.body}');
+        throw Exception(
+          'API returned ${response.statusCode}: ${response.body}',
+        );
       }
     } catch (e) {
       debugPrint('❌ Real API failed: $e');
       debugPrint('🔄 Falling back to mock data...');
-      
+
       // Fallback to mock data
       _userProfile = MockData.authInitResponse['data'];
       debugPrint('✅ Mock API: User initialized with mock data');
@@ -101,7 +104,7 @@ class AuthService extends ChangeNotifier {
 
       // start Google sign in process
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         // user cancelled sign in
         _setLoading(false);
@@ -109,7 +112,8 @@ class AuthService extends ChangeNotifier {
       }
 
       // get authentication details
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       // create Firebase credentials
       final credential = GoogleAuthProvider.credential(
@@ -118,15 +122,17 @@ class AuthService extends ChangeNotifier {
       );
 
       // sign in Firebase with credentials
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
-      
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
+
       _user = userCredential.user;
       _setLoading(false);
-      
+
       if (kDebugMode) {
         print('Google sign in successful: ${_user?.email}');
       }
-      
+
       return true;
     } catch (e) {
       _setError('sign in failed: ${e.toString()}');
@@ -145,15 +151,12 @@ class AuthService extends ChangeNotifier {
       _clearError();
 
       // sign out Google and Firebase
-      await Future.wait([
-        _auth.signOut(),
-        _googleSignIn.signOut(),
-      ]);
+      await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
 
       _user = null;
       _userProfile = null;
       _setLoading(false);
-      
+
       if (kDebugMode) {
         print('sign out successful');
       }
@@ -202,4 +205,4 @@ class AuthService extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
-} 
+}
