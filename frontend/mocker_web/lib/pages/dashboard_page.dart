@@ -11,7 +11,7 @@ import 'profile_page.dart';
 import 'qa_page.dart';
 import 'feedback_page.dart';
 import 'dart:convert';
-import 'package:web/web.dart' as web;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -229,8 +229,9 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
   }
 
   // Load status from local storage (auto-restore after page refresh)
-  Map<String, String> _loadStatusFromLocal() {
-    final jsonStr = web.window.localStorage[_localStorageKey];
+  Future<Map<String, String>> _loadStatusFromLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_localStorageKey);
     if (jsonStr == null) return {};
     try {
       final map = Map<String, dynamic>.from(jsonDecode(jsonStr));
@@ -241,8 +242,9 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
   }
 
   // Save status to local storage (frontend UI only, doesn't affect backend)
-  void _saveStatusToLocal() {
-    web.window.localStorage[_localStorageKey] = jsonEncode(_workflowStates);
+  Future<void> _saveStatusToLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_localStorageKey, jsonEncode(_workflowStates));
   }
 
   // Initialize: all workflows default to 'In Progress'
@@ -253,7 +255,7 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
         _error = null;
       });
       final loadedWorkflows = await _workflowService.getWorkflows();
-      final localStatus = _loadStatusFromLocal();
+      final localStatus = await _loadStatusFromLocal();
       setState(() {
         workflows = loadedWorkflows;
         _loading = false;

@@ -9,8 +9,9 @@ import '../data/mock_data.dart';
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId:
-        '1022761324834-ma82nm7e3cvck3bgv2k6rjnlakn33flm.apps.googleusercontent.com',
+    clientId: kIsWeb
+        ? '1022761324834-ma82nm7e3cvck3bgv2k6rjnlakn33flm.apps.googleusercontent.com'
+        : null,
     scopes: ['email', 'profile'],
   );
 
