@@ -46,9 +46,10 @@ class NavBar extends StatelessWidget {
         padding: EdgeInsets.only(
           top: topInset + (isNarrow ? -2.0 : 0.0),
           left: horizontalPadding,
-          right: horizontalPadding,
+          right: width < 600 ? horizontalPadding : 16.0, 
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,  
           children: [
             Expanded(
               child: Text(

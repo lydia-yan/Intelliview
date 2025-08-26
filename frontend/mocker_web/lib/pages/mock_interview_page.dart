@@ -289,42 +289,52 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     switch (_currentState) {
       case InterviewState.interviewing:
         return [
-          // STOP Interview button
+          // STOP Interview button - responsive size
           Container(
-            margin: const EdgeInsets.only(right: 8),
+            margin: const EdgeInsets.only(right: 0),  
+            height: MediaQuery.of(context).size.width < 600 ? 28 : null,  
             child: ElevatedButton.icon(
               onPressed: _loadingFeedback ? null : _endInterview,
               icon: _loadingFeedback 
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
+                ? SizedBox(
+                    width: MediaQuery.of(context).size.width < 600 ? 14 : 16,
+                    height: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: Colors.white,
                     ),
                   )
-                : const Icon(Icons.stop, size: 18),
-              label: Text(_loadingFeedback ? 'Ending...' : 'STOP Interview'),
+                : Icon(Icons.stop, size: MediaQuery.of(context).size.width < 600 ? 16 : 18),
+              label: Text(
+                _loadingFeedback ? 'Ending...' : 'STOP Interview',
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[600],
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width < 600 ? 10 : 16, 
+                  vertical: MediaQuery.of(context).size.width < 600 ? 0 : 12
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
           ),
-          // Back button
-          TextButton.icon(
-            onPressed: _loadingFeedback ? null : _goBackToWorkflowSelection,
-            icon: const Icon(Icons.arrow_back, size: 18),
-            label: const Text('Back to Selection'),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.darkGray,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          // Back button - only show on desktop
+          if (MediaQuery.of(context).size.width >= 600)
+            TextButton.icon(
+              onPressed: _loadingFeedback ? null : _goBackToWorkflowSelection,
+              icon: const Icon(Icons.arrow_back, size: 18),
+              label: const Text('Back to Selection'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.darkGray,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
             ),
-          ),
         ];
       case InterviewState.showingFeedback:
         return [
@@ -357,34 +367,39 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
 
   Widget _buildWorkflowSelectionPage() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48.0, vertical: 32.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 48.0, 
+        vertical: 32.0
+      ),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 1100),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width < 600 ? double.infinity : 1100
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Select a Position for Mock Interview',
               style: TextStyle(
-                fontSize: 25,
+                fontSize: MediaQuery.of(context).size.width < 600 ? 20 : 25,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF263238),
+                color: const Color(0xFF263238),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Choose one of your prepared workflows to start the mock interview',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                 color: Colors.grey[600],
               ),
             ),
             const SizedBox(height: 32),
             
-            // Interview Duration Selection - Simplified
+            // Interview Duration Selection - Responsive
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 20 : 24),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -397,56 +412,113 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.timer,
-                    color: const Color(0xFF263238),
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Interview Duration',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF263238),
+              child: MediaQuery.of(context).size.width < 600
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.timer,
+                              color: const Color(0xFF263238),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Interview Duration',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF263238),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: DropdownButton<int>(
+                            value: _selectedDuration,
+                            underline: const SizedBox(),
+                            icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF263238)),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF263238),
+                            ),
+                            items: _durationOptions.map((duration) {
+                              return DropdownMenuItem<int>(
+                                value: duration,
+                                child: Text('${duration} minutes'),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _selectedDuration = value;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Icon(
+                          Icons.timer,
+                          color: const Color(0xFF263238),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Interview Duration',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF263238),
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: DropdownButton<int>(
+                            value: _selectedDuration,
+                            underline: const SizedBox(),
+                            icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF263238)),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF263238),
+                            ),
+                            items: _durationOptions.map((duration) {
+                              return DropdownMenuItem<int>(
+                                value: duration,
+                                child: Text('${duration} minutes'),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _selectedDuration = value;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: DropdownButton<int>(
-                      value: _selectedDuration,
-                      underline: const SizedBox(),
-                      icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF263238)),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF263238),
-                      ),
-                      items: _durationOptions.map((duration) {
-                        return DropdownMenuItem<int>(
-                          value: duration,
-                          child: Text('${duration} minutes'),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedDuration = value;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
             ),
             
             const SizedBox(height: 32),
@@ -483,11 +555,12 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                           ),
                         )
                       : GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
+                          padding: EdgeInsets.zero,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 3,
                             mainAxisSpacing: 20,
                             crossAxisSpacing: 20,
-                            childAspectRatio: 1.3,
+                            childAspectRatio: MediaQuery.of(context).size.width < 600 ? 2.5 : 1.3,
                           ),
                           itemCount: _availableWorkflows.length,
                           itemBuilder: (context, index) {
@@ -507,10 +580,15 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
 
   Widget _buildChatPage() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 64.0, 
+        vertical: 32.0
+      ),
       child: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 1000),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width < 600 ? double.infinity : 1000
+          ),
           child: Column(
             children: [
               // Top info bar - redesigned
@@ -529,92 +607,196 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                     ),
                   ],
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFe6cfe6).withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.record_voice_over,
-                        color: Color(0xFF263238),
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
+                                child: MediaQuery.of(context).size.width < 600
+                    ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Mock Interview: ${_selectedWorkflow?.position}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF263238),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Company: ${_selectedWorkflow?.company}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Timer display section
-                    if (_interviewStartTime != null) Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[200]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
                           Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.access_time,
-                                size: 16,
-                                color: Colors.grey[600],
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFe6cfe6).withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.record_voice_over,
+                                  color: Color(0xFF263238),
+                                  size: 24,
+                                ),
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Elapsed time: ${_formatDuration(_elapsedTime)}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF263238),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _selectedWorkflow?.position ?? '',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF263238),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Company: ${_selectedWorkflow?.company}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Back button for mobile
+                              TextButton.icon(
+                                onPressed: _loadingFeedback ? null : _goBackToWorkflowSelection,
+                                icon: const Icon(Icons.arrow_back, size: 16),
+                                label: const Text('Back'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppTheme.darkGray,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatRemainingTime(),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: _elapsedTime.inMinutes >= _selectedDuration 
-                                  ? Colors.red[600]
-                                  : Colors.grey[600],
-                              fontWeight: _elapsedTime.inMinutes >= _selectedDuration 
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
+                          if (_interviewStartTime != null) ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.access_time,
+                                        size: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Elapsed time: ${_formatDuration(_elapsedTime)}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFF263238),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _formatRemainingTime(),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _elapsedTime.inMinutes >= _selectedDuration 
+                                          ? Colors.red[600]
+                                          : Colors.grey[600],
+                                      fontWeight: _elapsedTime.inMinutes >= _selectedDuration 
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFe6cfe6).withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.record_voice_over,
+                              color: Color(0xFF263238),
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Mock Interview: ${_selectedWorkflow?.position}',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF263238),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Company: ${_selectedWorkflow?.company}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Timer display section
+                          if (_interviewStartTime != null) Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey[200]!),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.access_time,
+                                      size: 16,
+                                      color: Colors.grey[600],
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Elapsed time: ${_formatDuration(_elapsedTime)}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF263238),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _formatRemainingTime(),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: _elapsedTime.inMinutes >= _selectedDuration 
+                                        ? Colors.red[600]
+                                        : Colors.red[600],
+                                    fontWeight: _elapsedTime.inMinutes >= _selectedDuration 
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
               ),
               const SizedBox(height: 24),
               
@@ -938,10 +1120,15 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     final focusTags = feedbackContent['focusTags'] as List<dynamic>? ?? [];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 64.0, 
+        vertical: 32.0
+      ),
       child: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 1000),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width < 600 ? double.infinity : 1000
+          ),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1572,59 +1759,59 @@ class _WorkflowCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        workflow.position,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      child: Padding(
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          workflow.position,
+                          style: TextStyle(
+                            fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: MediaQuery.of(context).size.width < 600 ? 14 : 16,
+                        color: const Color(0xFF263238),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 6 : 8),
+                  Text(
+                    workflow.company,
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
+                      color: const Color(0xFF263238),
+                    ),
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 10 : 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.lightBlue,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Start Interview',
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width < 600 ? 11 : 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.primaryBlue,
                       ),
                     ),
-                    const Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: Color(0xFF263238),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  workflow.company,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF263238),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.lightBlue,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Start Interview',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.primaryBlue,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
         ),
       ),
     );
