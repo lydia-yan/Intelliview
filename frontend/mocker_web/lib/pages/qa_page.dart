@@ -181,7 +181,10 @@ class _QAPageState extends State<QAPage> {
         // Main content
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 64.0, 
+              vertical: 32.0
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -210,7 +213,9 @@ class _QAPageState extends State<QAPage> {
     return Align(
       alignment: Alignment.centerLeft,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 300),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width < 600 ? double.infinity : 300
+        ),
         child: PopupMenuButton<Workflow>(
           onSelected: (workflow) {
             _onWorkflowSelected(workflow);
@@ -274,7 +279,7 @@ class _QAPageState extends State<QAPage> {
     return Row(
       children: [
         _buildModeButton('Review Mode', 'review'),
-        const SizedBox(width: 12),
+        SizedBox(width: MediaQuery.of(context).size.width < 600 ? 8 : 12),
         _buildModeButton('Quiz Mode', 'quiz'),
       ],
     );
@@ -290,7 +295,10 @@ class _QAPageState extends State<QAPage> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width < 600 ? 14 : 18, 
+          vertical: MediaQuery.of(context).size.width < 600 ? 6 : 8
+        ),
         decoration: BoxDecoration(
           color: isSelected ? AppTheme.lightBlue : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
@@ -316,37 +324,90 @@ class _QAPageState extends State<QAPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Text('Filter by tags:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-            const SizedBox(width: 8),
-            if (_selectedTags.isNotEmpty)
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _selectedTags.clear();
-                  });
-                },
-                child: const Text('Clear all', style: TextStyle(fontSize: 12)),
+        MediaQuery.of(context).size.width < 600
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Filter by tags:', 
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width < 600 ? 13 : 14, 
+                          fontWeight: FontWeight.w500
+                        )
+                      ),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _isTagFilterCollapsed = !_isTagFilterCollapsed;
+                          });
+                        },
+                        icon: Icon(
+                          _isTagFilterCollapsed ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                          size: 16,
+                        ),
+                        label: Text(
+                          _isTagFilterCollapsed ? 'Expand' : 'Collapse',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_selectedTags.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedTags.clear();
+                          });
+                        },
+                        child: const Text('Clear all', style: TextStyle(fontSize: 12)),
+                      ),
+                    ),
+                  ],
+                ],
+              )
+            : Row(
+                children: [
+                  Text(
+                    'Filter by tags:', 
+                    style: TextStyle(
+                      fontSize: 14, 
+                      fontWeight: FontWeight.w500
+                    )
+                  ),
+                  const SizedBox(width: 8),
+                  if (_selectedTags.isNotEmpty)
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedTags.clear();
+                        });
+                      },
+                      child: const Text('Clear all', style: TextStyle(fontSize: 12)),
+                    ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _isTagFilterCollapsed = !_isTagFilterCollapsed;
+                      });
+                    },
+                    icon: Icon(
+                      _isTagFilterCollapsed ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                      size: 16,
+                    ),
+                    label: Text(
+                      _isTagFilterCollapsed ? 'Expand' : 'Collapse',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
               ),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _isTagFilterCollapsed = !_isTagFilterCollapsed;
-                });
-              },
-              icon: Icon(
-                _isTagFilterCollapsed ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
-                size: 16,
-              ),
-              label: Text(
-                _isTagFilterCollapsed ? 'Expand' : 'Collapse',
-                style: const TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
-        ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -386,10 +447,10 @@ class _QAPageState extends State<QAPage> {
       children: [
         Text(
           categoryName,
-          style: const TextStyle(
-            fontSize: 12,
+          style: TextStyle(
+            fontSize: MediaQuery.of(context).size.width < 600 ? 11 : 12,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF555555),
+            color: const Color(0xFF555555),
           ),
         ),
         const SizedBox(height: 4),
@@ -455,6 +516,7 @@ class _QAPageState extends State<QAPage> {
     }
 
     return ListView.builder(
+      padding: EdgeInsets.zero,  
       itemCount: filteredQAs.length,
       itemBuilder: (context, index) {
         final qa = filteredQAs[index];
@@ -471,7 +533,7 @@ class _QAPageState extends State<QAPage> {
           ),
           shadowColor: Colors.black.withValues(alpha: 0.1),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -492,13 +554,19 @@ class _QAPageState extends State<QAPage> {
                   ),
                 Text(
                   qa.question,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: MediaQuery.of(context).size.width < 600 ? 15 : 16, 
+                    fontWeight: FontWeight.bold
+                  ),
                 ),
                 if (mode == 'review' || isExpanded) ...[
                   const SizedBox(height: 8),
                   Text(
                     qa.answer,
-                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 13 : 14, 
+                      color: Colors.black87
+                    ),
                   ),
                   if (mode == 'quiz' && isExpanded) ...[
                     const SizedBox(height: 8),
