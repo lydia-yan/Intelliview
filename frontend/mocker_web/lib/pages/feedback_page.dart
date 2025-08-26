@@ -53,7 +53,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
         _workflows = workflows;
         _loadingWorkflows = false;
         
-        // 如果有工作流，默认选择第一个
+        // If there are workflows, select the first one by default
         if (workflows.isNotEmpty) {
           _selectedWorkflow = workflows.first;
           _loadInterviewHistory(_selectedWorkflow!.workflowId);
@@ -193,7 +193,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
             Text(
               'Failed to load data',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: MediaQuery.of(context).size.width < 600 ? 18 : 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.red[700],
               ),
@@ -228,12 +228,18 @@ class _FeedbackPageState extends State<FeedbackPage> {
             const SizedBox(height: 16),
             Text(
               'No interview positions yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 18, 
+                color: Colors.grey[600]
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Prepare for an interview first to see your feedback history',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14, 
+                color: Colors.grey[500]
+              ),
             ),
           ],
         ),
@@ -241,7 +247,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 64.0, 
+        vertical: MediaQuery.of(context).size.width < 600 ? 16.0 : 32.0
+      ),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1000),
@@ -250,25 +259,25 @@ class _FeedbackPageState extends State<FeedbackPage> {
             children: [
               Text(
                 'Interview History',
-                style: const TextStyle(
-                  fontSize: 24,
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 20 : 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF263238),
+                  color: const Color(0xFF263238),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'View your past interview transcripts and feedback',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                   color: Colors.grey[600],
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
               
-              // 工作流选择器
+              // Workflow selector
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -291,18 +300,20 @@ class _FeedbackPageState extends State<FeedbackPage> {
                         Text(
                           'Select Position',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[800],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 300),
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width < 600 ? double.infinity : 300
+                        ),
                         child: PopupMenuButton<Workflow>(
                           onSelected: (workflow) {
                             _selectWorkflow(workflow);
@@ -318,14 +329,19 @@ class _FeedbackPageState extends State<FeedbackPage> {
                               value: workflow,
                               child: Text(
                                 '${workflow.company} - ${workflow.position}',
-                                style: TextStyle(fontSize: 14, color: Colors.grey[800]),
+                                style: TextStyle(
+                                  fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14, 
+                                  color: Colors.grey[800]
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             );
                           }).toList(),
                           child: Container(
-                            height: 48,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            height: MediaQuery.of(context).size.width < 600 ? 40 : 48,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: MediaQuery.of(context).size.width < 600 ? 12 : 16
+                            ),
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey[300]!, width: 1.5),
                               borderRadius: BorderRadius.circular(8),
@@ -340,13 +356,13 @@ class _FeedbackPageState extends State<FeedbackPage> {
                             ),
                             child: Row(
                               children: [
-              Expanded(
+                                Expanded(
                                   child: Text(
                                     _selectedWorkflow == null
                                         ? 'Select a workflow'
                                         : '${_selectedWorkflow!.company} - ${_selectedWorkflow!.position}',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
                                       color: _selectedWorkflow == null ? Colors.grey[500] : Colors.grey[800],
                                     ),
                                     overflow: TextOverflow.ellipsis,
@@ -363,9 +379,9 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 ),
               ),
               
-              const SizedBox(height: 24),
+              SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
               
-              // 面试历史列表
+              // Interview history list
               _loadingInterviews
                 ? const Center(
                     child: Padding(
@@ -386,7 +402,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
                             const SizedBox(height: 16),
                             Text(
                               'No interviews for this position yet',
-                              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                              style: TextStyle(
+                                fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16, 
+                                color: Colors.grey[600]
+                              ),
                             ),
                           ],
                         ),
@@ -394,6 +413,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     )
                   : Expanded(
                 child: ListView.builder(
+                  padding: EdgeInsets.zero,
                   itemCount: _interviewHistory.length,
                   itemBuilder: (context, index) {
                     final interview = _interviewHistory[index];
@@ -425,7 +445,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
     final createAt = _selectedInterview!['createAt'] ?? '';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 64.0, 
+        vertical: MediaQuery.of(context).size.width < 600 ? 16.0 : 32.0
+      ),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1000),
@@ -435,7 +458,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
               // Header info
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -453,10 +476,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   children: [
                     Text(
                       '$position at $company',
-                      style: const TextStyle(
-                        fontSize: 20,
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF263238),
+                        color: const Color(0xFF263238),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -466,14 +489,20 @@ class _FeedbackPageState extends State<FeedbackPage> {
                         const SizedBox(width: 4),
                         Text(
                           'Duration: ${duration}m',
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
                           _formatDate(createAt),
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
+                          ),
                         ),
                       ],
                     ),
@@ -481,13 +510,13 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 ),
               ),
               
-              const SizedBox(height: 24),
+              SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
               
               // Transcript
               Expanded(
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -510,26 +539,27 @@ class _FeedbackPageState extends State<FeedbackPage> {
                           Text(
                             'Interview Conversation',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.grey[800],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
                       Expanded(
                         child: transcript.isEmpty
                             ? Center(
                                 child: Text(
                                   'No transcript available',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                                     color: Colors.grey[500],
                                   ),
                                 ),
                               )
                             : ListView.builder(
+                                padding: EdgeInsets.zero,
                                 itemCount: transcript.length,
                                 itemBuilder: (context, index) {
                                   final message = transcript[index];
@@ -538,24 +568,24 @@ class _FeedbackPageState extends State<FeedbackPage> {
                                   final isUser = role == 'user';
                                   
                                   return Container(
-                                    margin: const EdgeInsets.only(bottom: 16),
+                                    margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.width < 600 ? 12 : 16),
                                     child: Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Container(
-                                          width: 32,
-                                          height: 32,
+                                          width: MediaQuery.of(context).size.width < 600 ? 28 : 32,
+                                          height: MediaQuery.of(context).size.width < 600 ? 28 : 32,
                                           decoration: BoxDecoration(
                                             color: isUser ? const Color(0xFF263238) : const Color(0xFFe6cfe6),
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width < 600 ? 14 : 16),
                                           ),
                                           child: Icon(
                                             isUser ? Icons.person : Icons.smart_toy,
                                             color: isUser ? Colors.white : const Color(0xFF263238),
-                                            size: 16,
+                                            size: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                                           ),
                                         ),
-                                        const SizedBox(width: 12),
+                                        SizedBox(width: MediaQuery.of(context).size.width < 600 ? 8 : 12),
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -563,7 +593,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                                               Text(
                                                 isUser ? 'You' : 'AI Interviewer',
                                                 style: TextStyle(
-                                                  fontSize: 12,
+                                                  fontSize: MediaQuery.of(context).size.width < 600 ? 10 : 12,
                                                   fontWeight: FontWeight.bold,
                                                   color: Colors.grey[600],
                                                 ),
@@ -572,7 +602,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                                               Text(
                                                 content,
                                                 style: TextStyle(
-                                                  fontSize: 14,
+                                                  fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
                                                   color: Colors.grey[800],
                                                   height: 1.4,
                                                 ),
@@ -617,7 +647,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
     final focusTags = feedback['focusTags'] as List<dynamic>? ?? [];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 64.0, 
+        vertical: MediaQuery.of(context).size.width < 600 ? 16.0 : 32.0
+      ),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1000),
@@ -628,7 +661,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 // Header section
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -647,118 +680,111 @@ class _FeedbackPageState extends State<FeedbackPage> {
                       ),
                     ],
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.assessment,
-                                  size: 32,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 12),
-                                const Text(
-                                  'Interview Feedback',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.assessment,
+                            size: MediaQuery.of(context).size.width < 600 ? 24 : 32,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Interview Feedback',
+                            style: TextStyle(
+                              fontSize: MediaQuery.of(context).size.width < 600 ? 18 : 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '$position at $company',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$position at $company',
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
+                      SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
                       
-                      // right side rating and tags
-                      Expanded(
-                        flex: 1,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            // Overall Rating
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'Rating: ',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                  ),
+                      // Rating and tags
+                      Row(
+                        children: [
+                          // Overall Rating
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Rating: ',
+                                style: TextStyle(
+                                  fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
+                                  color: Colors.white.withValues(alpha: 0.9),
                                 ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: List.generate(5, (index) {
-                                    return Icon(
-                                      index < overallRating ? Icons.star : Icons.star_border,
-                                      color: Colors.amber,
-                                      size: 20,
-                                    );
-                                  }),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: List.generate(5, (index) {
+                                  return Icon(
+                                    index < overallRating ? Icons.star : Icons.star_border,
+                                    color: Colors.amber,
+                                    size: MediaQuery.of(context).size.width < 600 ? 16 : 20,
+                                  );
+                                }),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$overallRating/5',
+                                style: TextStyle(
+                                  fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '$overallRating/5',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            
-                            // Focus Tags
-                            if (focusTags.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Wrap(
-                                alignment: WrapAlignment.end,
-                                spacing: 6,
-                                runSpacing: 6,
-                                children: focusTags.take(3).map((tag) => Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    tag.toString(),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.white.withValues(alpha: 0.9),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                )).toList(),
                               ),
                             ],
+                          ),
+                          
+                          // Focus Tags
+                          if (focusTags.isNotEmpty) ...[
+                            const Spacer(),
+                            Wrap(
+                              alignment: WrapAlignment.end,
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: focusTags.take(3).map((tag) => Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: MediaQuery.of(context).size.width < 600 ? 6 : 8, 
+                                  vertical: MediaQuery.of(context).size.width < 600 ? 2 : 4
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  tag.toString(),
+                                  style: TextStyle(
+                                    fontSize: MediaQuery.of(context).size.width < 600 ? 9 : 11,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              )).toList(),
+                            ),
                           ],
-                        ),
+                        ],
                       ),
                     ],
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
 
                 // Positives section
                 if (positives.isNotEmpty) ...[
@@ -768,25 +794,25 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     color: Colors.green,
                     items: positives.cast<String>(),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
                 ],
 
                 // Improvement areas section
                 if (improvementAreas.isNotEmpty) ...[
                   _buildImprovementSection(improvementAreas),
-                  const SizedBox(height: 24),
+                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
                 ],
 
                 // Resources section
                 if (resources.isNotEmpty) ...[
                   _buildResourcesSection(resources),
-                  const SizedBox(height: 24),
+                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
                 ],
 
                 // Reflection prompts section
                 if (reflectionPrompt.isNotEmpty) ...[
                   _buildReflectionSection(reflectionPrompt.cast<String>()),
-                  const SizedBox(height: 32),
+                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 24 : 32),
                 ],
               ],
             ),
@@ -804,7 +830,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -823,34 +849,37 @@ class _FeedbackPageState extends State<FeedbackPage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 6 : 8),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 24),
+                child: Icon(icon, color: color, size: MediaQuery.of(context).size.width < 600 ? 20 : 24),
               ),
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 20,
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF263238),
+                  color: const Color(0xFF263238),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
           ...items.map((item) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.width < 600 ? 8 : 12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   width: 6,
                   height: 6,
-                  margin: const EdgeInsets.only(top: 8, right: 12),
+                  margin: EdgeInsets.only(
+                    top: MediaQuery.of(context).size.width < 600 ? 6 : 8, 
+                    right: MediaQuery.of(context).size.width < 600 ? 8 : 12
+                  ),
                   decoration: BoxDecoration(
                     color: color,
                     shape: BoxShape.circle,
@@ -860,7 +889,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   child: Text(
                     item,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                       color: Colors.grey[700],
                       height: 1.5,
                     ),
@@ -877,7 +906,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
   Widget _buildImprovementSection(List<dynamic> improvementAreas) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -896,33 +925,33 @@ class _FeedbackPageState extends State<FeedbackPage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 6 : 8),
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.trending_up, color: Colors.orange, size: 24),
+                child: Icon(Icons.trending_up, color: Colors.orange, size: MediaQuery.of(context).size.width < 600 ? 20 : 24),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Areas for Improvement',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF263238),
+                  color: const Color(0xFF263238),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
           ...improvementAreas.map((area) {
             final topic = area['topic'] ?? '';
             final example = area['example'] ?? '';
             final suggestion = area['suggestion'] ?? '';
             
             return Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(16),
+              margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.width < 600 ? 12 : 16),
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 16),
               decoration: BoxDecoration(
                 color: Colors.orange.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
@@ -933,26 +962,26 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 children: [
                   Text(
                     topic,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF263238),
+                      color: const Color(0xFF263238),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 6 : 8),
                   Text(
                     'Example: $example',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
                       color: Colors.grey[700],
                       fontStyle: FontStyle.italic,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 6 : 8),
                   Text(
                     'Suggestion: $suggestion',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
                       color: Colors.grey[800],
                       fontWeight: FontWeight.w500,
                     ),
@@ -969,7 +998,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
   Widget _buildResourcesSection(List<dynamic> resources) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -988,31 +1017,31 @@ class _FeedbackPageState extends State<FeedbackPage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 6 : 8),
                 decoration: BoxDecoration(
                   color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.library_books, color: Colors.blue, size: 24),
+                child: Icon(Icons.library_books, color: Colors.blue, size: MediaQuery.of(context).size.width < 600 ? 20 : 24),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Recommended Resources',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF263238),
+                  color: const Color(0xFF263238),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
           ...resources.map((resource) {
             final title = resource['title'] ?? '';
             final link = resource['link'] ?? '';
             
             return Container(
-              margin: const EdgeInsets.only(bottom: 12),
+              margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.width < 600 ? 8 : 12),
               child: InkWell(
                 onTap: () async {
                   try {
@@ -1022,20 +1051,20 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     } else {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('无法打开链接: $link')),
+                          SnackBar(content: Text('Unable to open link: $link')),
                         );
                       }
                     }
                   } catch (e) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('链接格式错误: $link')),
+                        SnackBar(content: Text('Invalid link format: $link')),
                       );
                     }
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 16),
                   decoration: BoxDecoration(
                     color: Colors.blue.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
@@ -1043,19 +1072,19 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.link, color: Colors.blue, size: 20),
-                      const SizedBox(width: 12),
+                      Icon(Icons.link, color: Colors.blue, size: MediaQuery.of(context).size.width < 600 ? 18 : 20),
+                      SizedBox(width: MediaQuery.of(context).size.width < 600 ? 8 : 12),
                       Expanded(
                         child: Text(
                           title,
-                          style: const TextStyle(
-                            fontSize: 16,
+                          style: TextStyle(
+                            fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                             color: Colors.blue,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, color: Colors.blue, size: 16),
+                      Icon(Icons.arrow_forward_ios, color: Colors.blue, size: MediaQuery.of(context).size.width < 600 ? 14 : 16),
                     ],
                   ),
                 ),
@@ -1070,7 +1099,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
   Widget _buildReflectionSection(List<String> prompts) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1089,43 +1118,43 @@ class _FeedbackPageState extends State<FeedbackPage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 6 : 8),
                 decoration: BoxDecoration(
                   color: Colors.purple.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.psychology, color: Colors.purple, size: 24),
+                child: Icon(Icons.psychology, color: Colors.purple, size: MediaQuery.of(context).size.width < 600 ? 20 : 24),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Reflection Questions',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF263238),
+                  color: const Color(0xFF263238),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
           Text(
             'Take some time to reflect on these questions:',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
               color: Colors.grey[700],
               fontStyle: FontStyle.italic,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
           ...prompts.map((prompt) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.width < 600 ? 8 : 12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '• ',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 18,
                     color: Colors.purple,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1134,7 +1163,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   child: Text(
                     prompt,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                       color: Colors.grey[700],
                       height: 1.5,
                     ),
@@ -1191,8 +1220,8 @@ class _InterviewHistoryCard extends StatelessWidget {
     final overallRating = interview['feedback']?['overallRating'] ?? 0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(24),
+      margin: EdgeInsets.only(bottom: MediaQuery.of(context).size.width < 600 ? 12 : 16),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1217,21 +1246,21 @@ class _InterviewHistoryCard extends StatelessWidget {
                   children: [
                     Text(
                       position,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF263238),
+                        color: const Color(0xFF263238),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       company,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                         color: Colors.grey[600],
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: MediaQuery.of(context).size.width < 600 ? 6 : 8),
                     Row(
                       children: [
                         Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
@@ -1239,7 +1268,7 @@ class _InterviewHistoryCard extends StatelessWidget {
                         Text(
                           '${duration}m',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: MediaQuery.of(context).size.width < 600 ? 10 : 12,
                             color: Colors.grey[500],
                           ),
                         ),
@@ -1249,7 +1278,7 @@ class _InterviewHistoryCard extends StatelessWidget {
                         Text(
                           _formatDate(createAt),
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: MediaQuery.of(context).size.width < 600 ? 10 : 12,
                             color: Colors.grey[500],
                           ),
                         ),
@@ -1268,7 +1297,7 @@ class _InterviewHistoryCard extends StatelessWidget {
                       return Icon(
                         index < overallRating ? Icons.star : Icons.star_border,
                         color: Colors.amber,
-                        size: 16,
+                        size: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                       );
                     }),
                   ),
@@ -1276,7 +1305,7 @@ class _InterviewHistoryCard extends StatelessWidget {
                   Text(
                     '$overallRating/5',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 10 : 12,
                       color: Colors.grey[600],
                       fontWeight: FontWeight.w500,
                     ),
@@ -1286,7 +1315,7 @@ class _InterviewHistoryCard extends StatelessWidget {
             ],
           ),
           
-          const SizedBox(height: 16),
+          SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
           
           // Action buttons
           Row(
@@ -1294,28 +1323,42 @@ class _InterviewHistoryCard extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onViewTranscript,
-                  icon: const Icon(Icons.chat, size: 16),
-                  label: const Text('View Transcript'),
+                  icon: Icon(Icons.chat, size: MediaQuery.of(context).size.width < 600 ? 14 : 16),
+                  label: Text(
+                    'View Transcript',
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 11 : 12,
+                    ),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF263238),
                     side: const BorderSide(color: Color(0xFF263238)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(
+                      vertical: MediaQuery.of(context).size.width < 600 ? 8 : 12
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: MediaQuery.of(context).size.width < 600 ? 8 : 12),
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: onViewFeedback,
-                  icon: const Icon(Icons.assessment, size: 16),
-                  label: const Text('View Feedback'),
+                  icon: Icon(Icons.assessment, size: MediaQuery.of(context).size.width < 600 ? 14 : 16),
+                  label: Text(
+                    'View Feedback',
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 11 : 12,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF263238),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(
+                      vertical: MediaQuery.of(context).size.width < 600 ? 8 : 12
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
