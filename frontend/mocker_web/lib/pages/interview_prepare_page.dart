@@ -708,129 +708,129 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
   // Desktop layout - two columns
   Widget _buildDesktopLayout() {
     return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Left column: Resume + Professional Links
-          Expanded(
-            flex: 1,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Resume upload section
-                _buildSection(
-                  title: 'Resume',
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      OutlinedButton.icon(
-                        icon: Icon(
-                          _resumeFile == null ? Icons.upload_file : Icons.check_circle,
-                          color: _resumeFile == null ? const Color(0xFF263238) : Colors.green,
-                        ),
-                        label: Text(
-                          _resumeFile == null ? 'Upload Resume PDF' : _resumeFile!.name,
-                          style: TextStyle(
-                            color: _resumeFile == null ? const Color(0xFF263238) : Colors.green,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: _resumeFile == null ? const Color(0xFF263238) : Colors.green,
-                          ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                          minimumSize: const Size(double.infinity, 56),
-                        ),
-                        onPressed: _pickResume,
-                      ),
-                      if (_resumeFile == null)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8),
-                          child: Text(
-                            '* Required - Please upload your resume in PDF format',
-                            style: TextStyle(color: Colors.red, fontSize: 14),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Professional Links section
-                _buildSection(
-                  title: 'Professional Links',
-                  child: Column(
-                    children: [
-                      _buildFormField(
-                        controller: _linkedinController,
-                        label: 'LinkedIn URL (Optional)',
-                        icon: Icons.work,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildFormField(
-                        controller: _githubController,
-                        label: 'GitHub URL (Optional)',
-                        icon: Icons.code,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildFormField(
-                        controller: _portfolioController,
-                        label: 'Portfolio URL (Optional)',
-                        icon: Icons.web,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Vertical divider
-          Container(
-            width: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 32),
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-            ),
-          ),
-          
-          // Right column: Additional Info + Job Description
-          Expanded(
-            flex: 1,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Additional info section
-                _buildSection(
-                  title: 'Additional Information',
-                  child: _buildFormField(
-                    controller: _additionalController,
-                    label: 'Tell us more about yourself, your projects, achievements, etc.',
-                    icon: Icons.info_outline,
-                    maxLines: 5,
-                  ),
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Job description section
-                _buildSection(
-                  title: 'Job Description',
-                  child: _buildFormField(
-                    controller: _jobDescController,
-                    label: 'Paste the job description here',
-                    icon: Icons.description,
-                    maxLines: 6,
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Left column: Resume + Professional Links
+                                  Expanded(
+                                    flex: 1,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Resume upload section
+                                        _buildSection(
+                                          title: 'Resume',
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              OutlinedButton.icon(
+                                                icon: Icon(
+                                                  _resumeFile == null ? Icons.upload_file : Icons.check_circle,
+                                                  color: _resumeFile == null ? const Color(0xFF263238) : Colors.green,
+                                                ),
+                                                label: Text(
+                                                  _resumeFile == null ? 'Upload Resume PDF' : _resumeFile!.name,
+                                                  style: TextStyle(
+                                                    color: _resumeFile == null ? const Color(0xFF263238) : Colors.green,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                style: OutlinedButton.styleFrom(
+                                                  side: BorderSide(
+                                                    color: _resumeFile == null ? const Color(0xFF263238) : Colors.green,
+                                                  ),
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                                                  minimumSize: const Size(double.infinity, 56),
+                                                ),
+                                                onPressed: _pickResume,
+                                              ),
+                                              if (_resumeFile == null)
+                                                const Padding(
+                                                  padding: EdgeInsets.only(top: 8),
+                                                  child: Text(
+                                                    '* Required - Please upload your resume in PDF format',
+                                                    style: TextStyle(color: Colors.red, fontSize: 14),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        
+                                        const SizedBox(height: 32),
+                                        
+                                        // Professional Links section
+                                        _buildSection(
+                                          title: 'Professional Links',
+                                          child: Column(
+                                            children: [
+                                              _buildFormField(
+                                                controller: _linkedinController,
+                                                label: 'LinkedIn URL (Optional)',
+                                                icon: Icons.work,
+                                              ),
+                                              const SizedBox(height: 20),
+                                              _buildFormField(
+                                                controller: _githubController,
+                                                label: 'GitHub URL (Optional)',
+                                                icon: Icons.code,
+                                              ),
+                                              const SizedBox(height: 20),
+                                              _buildFormField(
+                                                controller: _portfolioController,
+                                                label: 'Portfolio URL (Optional)',
+                                                icon: Icons.web,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  // Vertical divider
+                                  Container(
+                                    width: 1,
+                                    margin: const EdgeInsets.symmetric(horizontal: 32),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                    ),
+                                  ),
+                                  
+                                  // Right column: Additional Info + Job Description
+                                  Expanded(
+                                    flex: 1,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Additional info section
+                                        _buildSection(
+                                          title: 'Additional Information',
+                                          child: _buildFormField(
+                                            controller: _additionalController,
+                                            label: 'Tell us more about yourself, your projects, achievements, etc.',
+                                            icon: Icons.info_outline,
+                                            maxLines: 5,
+                                          ),
+                                        ),
+                                        
+                                        const SizedBox(height: 32),
+                                        
+                                        // Job description section
+                                        _buildSection(
+                                          title: 'Job Description',
+                                          child: _buildFormField(
+                                            controller: _jobDescController,
+                                            label: 'Paste the job description here',
+                                            icon: Icons.description,
+                                            maxLines: 6,
+                                            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
       ),
     );
   }
