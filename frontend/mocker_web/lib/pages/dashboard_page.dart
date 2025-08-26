@@ -444,7 +444,10 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
         // Main content
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 64.0, 
+              vertical: 32.0
+            ),
             child: workflows.isEmpty
                 ? const Center(child: Text('No workflows found. Please prepare for interviews first.'))
                 : Column(
@@ -464,11 +467,11 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                       Expanded(
                         child: GridView.builder(
                           padding: const EdgeInsets.only(bottom: 24),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 3,
                             mainAxisSpacing: 20,
                             crossAxisSpacing: 20,
-                            childAspectRatio: 2.4,
+                            childAspectRatio: MediaQuery.of(context).size.width < 600 ? 3.5 : 2.4,
                           ),
                           itemCount: workflows.length,
                           itemBuilder: (context, idx) {
@@ -490,7 +493,7 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                                   ],
                                 ),
                                 child: Padding(
-                                  padding: const EdgeInsets.all(20),
+                                  padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 20),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -498,22 +501,25 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                                       Text(
                                         workflow.position, 
                                         style: TextStyle(
-                                          fontSize: 16, 
+                                          fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16, 
                                           fontWeight: FontWeight.w600,
                                           color: AppTheme.darkGray,
                                         )
                                       ),
-                                      const SizedBox(height: 6),
+                                      SizedBox(height: MediaQuery.of(context).size.width < 600 ? 4 : 6),
                                       Text(
                                         workflow.company, 
                                         style: TextStyle(
-                                          fontSize: 14, 
+                                          fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14, 
                                           color: AppTheme.mediumGray
                                         )
                                       ),
-                                      const SizedBox(height: 12),
+                                      SizedBox(height: MediaQuery.of(context).size.width < 600 ? 8 : 12),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: MediaQuery.of(context).size.width < 600 ? 8 : 10, 
+                                          vertical: MediaQuery.of(context).size.width < 600 ? 3 : 4
+                                        ),
                                         decoration: BoxDecoration(
                                           color: currentState == 'Complete' 
                                             ? AppTheme.borderGray 
@@ -527,7 +533,7 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                                               ? AppTheme.mediumGray 
                                               : AppTheme.primaryBlue,
                                             fontWeight: FontWeight.w500,
-                                            fontSize: 12,
+                                            fontSize: MediaQuery.of(context).size.width < 600 ? 10 : 12,
                                           ),
                                         ),
                                       ),
