@@ -157,66 +157,52 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
          bottomNavigationBar: isNarrow
               ? Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F7FF),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
+                  color: const Color(0xFFF3F7FF),
                   child: SafeArea(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 600),
-                        child: Container(
-                          height: 80,
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: _navItems.asMap().entries.map((entry) {
-                              final idx = entry.key;
-                              final item = entry.value;
-                              final isSelected = _selectedIndex == idx;
-                              return Expanded(
-                                child: GestureDetector(
-                                  onTap: () => setState(() => _selectedIndex = idx),
-                                  child: Container(
-                                    margin: const EdgeInsets.symmetric(horizontal: 1),
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: isSelected ? const Color(0xFFE0EAFF) : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          item.icon,
-                                          color: isSelected ? AppTheme.primaryBlue : AppTheme.mediumGray,
-                                          size: 22,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          (isNarrow && item.label == 'Mock Interview') ? 'Mock' : item.label,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: isSelected ? AppTheme.primaryBlue : AppTheme.mediumGray,
-                                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                         child: Container(
+                       height: 80,
+                       padding: const EdgeInsets.symmetric(horizontal: 8),
+                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: _navItems.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final item = entry.value;
+                          final isSelected = _selectedIndex == idx;
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _selectedIndex = idx),
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 1),
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFFE0EAFF) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      item.icon,
+                                      color: isSelected ? AppTheme.primaryBlue : AppTheme.mediumGray,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      (isNarrow && item.label == 'Mock Interview') ? 'Mock' : item.label,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isSelected ? AppTheme.primaryBlue : AppTheme.mediumGray,
+                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
                   ),
