@@ -423,7 +423,10 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
         // Main content
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 32.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 32.0, 
+              vertical: 32.0
+            ),
             child: Center(
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 1200),
@@ -438,33 +441,273 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                       border: Border.all(color: AppTheme.borderGray, width: 1.5),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(48.0),
+                      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 24.0 : 48.0),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Header section
-                            const Text(
+                            Text(
                               'Interview Preparation',
                               style: TextStyle(
-                                fontSize: 28,
+                                fontSize: MediaQuery.of(context).size.width < 600 ? 24 : 28,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF263238),
+                                color: const Color(0xFF263238),
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Upload your resume and provide additional information to prepare for your interview',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                                 color: Colors.grey[600],
                               ),
                             ),
                             const SizedBox(height: 40),
                             
-                            // Two-column layout
-                            IntrinsicHeight(
+                            // Responsive layout: two-column on desktop, single-column on mobile
+                            MediaQuery.of(context).size.width < 600
+                                ? _buildMobileLayout()
+                                : _buildDesktopLayout(),
+                            
+                            const SizedBox(height: 40),
+                            
+                            // Submit button (centered)
+                            Center(
+                              child: SizedBox(
+                                width: 300,
+                                child: ElevatedButton(
+                                  onPressed: _submitting ? null : _submit,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF263238),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(vertical: 18),
+                                    elevation: 2,
+                                  ),
+                                  child: _submitting
+                                      ? Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: const [
+                                            SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            SizedBox(width: 12),
+                                            Text(
+                                              'Processing...',
+                                              style: TextStyle(fontSize: 16),
+                                            ),
+                                          ],
+                                        )
+                                      : const Text(
+                                          'Submit Interview Preparation',
+                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSection({required String title, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF263238),
+          ),
+        ),
+        const SizedBox(height: 12),
+        child,
+      ],
+    );
+  }
+
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    String? Function(String?)? validator,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      maxLines: maxLines,
+      style: TextStyle(
+        fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 15,
+        color: const Color(0xFF263238),
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          fontSize: MediaQuery.of(context).size.width < 600 ? 13 : 14,
+          color: Colors.grey[600],
+        ),
+        prefixIcon: Container(
+          margin: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF263238).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: const Color(0xFF263238), size: 18),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF263238), width: 2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.grey[50],
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        floatingLabelBehavior: FloatingLabelBehavior.auto,
+      ),
+    );
+  }
+
+  // Mobile layout - single column
+  Widget _buildMobileLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Resume upload section
+        _buildSection(
+          title: 'Resume',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              OutlinedButton.icon(
+                icon: Icon(
+                  _resumeFile == null ? Icons.upload_file : Icons.check_circle,
+                  color: _resumeFile == null ? const Color(0xFF263238) : Colors.green,
+                ),
+                label: Text(
+                  _resumeFile == null ? 'Upload Resume PDF' : _resumeFile!.name,
+                  style: TextStyle(
+                    color: _resumeFile == null ? const Color(0xFF263238) : Colors.green,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
+                    color: _resumeFile == null ? const Color(0xFF263238) : Colors.green,
+                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  minimumSize: const Size(double.infinity, 56),
+                ),
+                onPressed: _pickResume,
+              ),
+              if (_resumeFile == null)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(
+                    '* Required - Please upload your resume in PDF format',
+                    style: TextStyle(color: Colors.red, fontSize: 14),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Professional Links section
+        _buildSection(
+          title: 'Professional Links',
+          child: Column(
+            children: [
+              _buildFormField(
+                controller: _linkedinController,
+                label: 'LinkedIn URL (Optional)',
+                icon: Icons.work,
+              ),
+              const SizedBox(height: 16),
+              _buildFormField(
+                controller: _githubController,
+                label: 'GitHub URL (Optional)',
+                icon: Icons.code,
+              ),
+              const SizedBox(height: 16),
+              _buildFormField(
+                controller: _portfolioController,
+                label: 'Portfolio URL (Optional)',
+                icon: Icons.web,
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Additional info section
+        _buildSection(
+          title: 'Additional Information',
+          child: _buildFormField(
+            controller: _additionalController,
+            label: 'Tell us more about yourself, your projects, achievements, etc.',
+            icon: Icons.info_outline,
+            maxLines: 4,
+          ),
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Job description section
+        _buildSection(
+          title: 'Job Description',
+          child: _buildFormField(
+            controller: _jobDescController,
+            label: 'Paste the job description here',
+            icon: Icons.description,
+            maxLines: 5,
+            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Desktop layout - two columns
+  Widget _buildDesktopLayout() {
+    return IntrinsicHeight(
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
@@ -588,136 +831,6 @@ class _InterviewPreparePageState extends State<InterviewPreparePage> {
                                     ),
                                   ),
                                 ],
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 40),
-                            
-                            // Submit button (centered)
-                            Center(
-                              child: SizedBox(
-                                width: 300,
-                                child: ElevatedButton(
-                                  onPressed: _submitting ? null : _submit,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF263238),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    padding: const EdgeInsets.symmetric(vertical: 18),
-                                    elevation: 2,
-                                  ),
-                                  child: _submitting
-                                      ? Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: const [
-                                            SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            SizedBox(width: 12),
-                                            Text(
-                                              'Processing...',
-                                              style: TextStyle(fontSize: 16),
-                                            ),
-                                          ],
-                                        )
-                                      : const Text(
-                                          'Submit Interview Preparation',
-                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                                        ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSection({required String title, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF263238),
-          ),
-        ),
-        const SizedBox(height: 12),
-        child,
-      ],
-    );
-  }
-
-  Widget _buildFormField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    String? Function(String?)? validator,
-    int maxLines = 1,
-  }) {
-    return TextFormField(
-      controller: controller,
-      validator: validator,
-      maxLines: maxLines,
-      style: const TextStyle(
-        fontSize: 15,
-        color: Color(0xFF263238),
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(
-          fontSize: 14,
-          color: Colors.grey[600],
-        ),
-        prefixIcon: Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF263238).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: const Color(0xFF263238), size: 18),
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF263238), width: 2),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        floatingLabelBehavior: FloatingLabelBehavior.auto,
       ),
     );
   }

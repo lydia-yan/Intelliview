@@ -255,7 +255,10 @@ class _ProfilePageState extends State<ProfilePage> {
           // Main content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 64.0, 
+                vertical: MediaQuery.of(context).size.width < 600 ? 16.0 : 32.0
+              ),
               child: Center(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 1200),
@@ -268,20 +271,28 @@ class _ProfilePageState extends State<ProfilePage> {
                           alignment: Alignment.centerLeft,
                           child: ElevatedButton.icon(
                             onPressed: _toggleEditMode,
-                            icon: const Icon(Icons.edit, size: 18),
-                            label: const Text('Edit Profile'),
+                            icon: Icon(Icons.edit, size: MediaQuery.of(context).size.width < 600 ? 16 : 18),
+                            label: Text(
+                              'Edit Profile',
+                              style: TextStyle(
+                                fontSize: MediaQuery.of(context).size.width < 600 ? 13 : 14,
+                              ),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.darkGray,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: MediaQuery.of(context).size.width < 600 ? 16 : 24, 
+                                vertical: MediaQuery.of(context).size.width < 600 ? 12 : 16
+                              ),
                               elevation: 2,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
                       ],
                       
                       // Profile content
@@ -301,160 +312,20 @@ class _ProfilePageState extends State<ProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IntrinsicHeight( 
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                flex: 1,
-                child: _buildInfoCard(
-                  title: 'Basic Information',
-                  children: [
-                    Center( 
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: CircleAvatar(
-                              radius: 40, 
-                              backgroundColor: const Color(0xFFE6CFE6), 
-                              child: _user!.photoURL != null && _user!.photoURL!.isNotEmpty
-                                  ? ClipOval(
-                                      child: Image.network(
-                                        _user!.photoURL!,
-                                        width: 80,
-                                        height: 80,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return const Icon(Icons.person, color: Color(0xFF263238), size: 40);
-                                        },
-                                      ),
-                                    )
-                                  : const Icon(Icons.person, color: Color(0xFF263238), size: 40),
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 16),
-                          
-                          // Name (centered)
-                          Text(
-                            _user!.name,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF263238),
-                              height: 1.2,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          
-                          const SizedBox(height: 8),
-                          
-                          // Email (centered)
-                          Text(
-                            _user!.email,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          
-                          const SizedBox(height: 16),
-                          
-                          // Status badge (centered)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF263238).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Active User',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: const Color(0xFF263238),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(width: 32),
-              
-              Expanded(
-                flex: 2,
-                child: _buildInfoCard(
-                  title: 'Social Links',
-                  children: [
-                    if (_user!.linkedinLink != null && _user!.linkedinLink!.isNotEmpty) ...[
-                      const SizedBox(height: 8), 
-                      _buildInfoItem(
-                        icon: Icons.work,
-                        label: 'LinkedIn',
-                        value: _user!.linkedinLink!,
-                        isLink: true,
-                      ),
-                    ],
-                    if (_user!.githubLink != null && _user!.githubLink!.isNotEmpty)
-                      _buildInfoItem(
-                        icon: Icons.code,
-                        label: 'GitHub',
-                        value: _user!.githubLink!,
-                        isLink: true,
-                      ),
-                    if (_user!.portfolioLink != null && _user!.portfolioLink!.isNotEmpty)
-                      _buildInfoItem(
-                        icon: Icons.web,
-                        label: 'Portfolio',
-                        value: _user!.portfolioLink!,
-                        isLink: true,
-                      ),
-                    if ((_user!.linkedinLink == null || _user!.linkedinLink!.isEmpty) &&
-                        (_user!.githubLink == null || _user!.githubLink!.isEmpty) &&
-                        (_user!.portfolioLink == null || _user!.portfolioLink!.isEmpty))
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'No social links added yet',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Profile content - responsive layout
+        MediaQuery.of(context).size.width < 600 
+          ? _buildMobileViewMode() 
+          : _buildDesktopViewMode(),
         
         // Additional info section
         if (_user!.additionalInfo != null && _user!.additionalInfo!.isNotEmpty) ...[
-          const SizedBox(height: 32),
+          SizedBox(height: MediaQuery.of(context).size.width < 600 ? 24 : 32),
           _buildInfoCard(
             title: 'Additional Information',
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 20),
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(16),
@@ -462,10 +333,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 child: Text(
                   _user!.additionalInfo!,
-                  style: const TextStyle(
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontSize: MediaQuery.of(context).size.width < 600 ? 13 : 15,
                     height: 1.6,
-                    color: Color(0xFF263238),
+                    color: const Color(0xFF263238),
                   ),
                 ),
               ),
@@ -474,27 +345,30 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
         
         // Sign Out button
-        const SizedBox(height: 40),
+        SizedBox(height: MediaQuery.of(context).size.width < 600 ? 32 : 40),
         Center(
           child: SizedBox(
-            width: 160,
+            width: MediaQuery.of(context).size.width < 600 ? 140 : 160,
             child: Consumer<AuthService>(
               builder: (context, authService, child) {
                 return TextButton.icon(
                   onPressed: () async {
                     await authService.signOut();
                   },
-                  icon: const Icon(Icons.logout, color: Colors.white, size: 20),
-                  label: const Text(
+                  icon: Icon(Icons.logout, color: Colors.white, size: MediaQuery.of(context).size.width < 600 ? 18 : 20),
+                  label: Text(
                     'Sign Out',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    padding: EdgeInsets.symmetric(
+                      vertical: MediaQuery.of(context).size.width < 600 ? 12 : 16, 
+                      horizontal: MediaQuery.of(context).size.width < 600 ? 20 : 24
+                    ),
                     backgroundColor: const Color(0xFF263238),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -507,6 +381,296 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMobileViewMode() {
+    return Column(
+      children: [
+        // Basic Information card
+        _buildInfoCard(
+          title: 'Basic Information',
+          children: [
+            Center( 
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: MediaQuery.of(context).size.width < 600 ? 32 : 40, 
+                      backgroundColor: const Color(0xFFE6CFE6), 
+                      child: _user!.photoURL != null && _user!.photoURL!.isNotEmpty
+                          ? ClipOval(
+                              child: Image.network(
+                                _user!.photoURL!,
+                                width: MediaQuery.of(context).size.width < 600 ? 64 : 80,
+                                height: MediaQuery.of(context).size.width < 600 ? 64 : 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(Icons.person, color: const Color(0xFF263238), size: MediaQuery.of(context).size.width < 600 ? 32 : 40);
+                                },
+                              ),
+                            )
+                          : Icon(Icons.person, color: const Color(0xFF263238), size: MediaQuery.of(context).size.width < 600 ? 32 : 40),
+                    ),
+                  ),
+                  
+                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
+                  
+                  // Name (centered)
+                  Text(
+                    _user!.name,
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 20 : 24,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF263238),
+                      height: 1.2,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  // Email (centered)
+                  Text(
+                    _user!.email,
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  
+                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
+                  
+                  // Status badge (centered)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width < 600 ? 12 : 16, 
+                      vertical: MediaQuery.of(context).size.width < 600 ? 6 : 8
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF263238).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Active User',
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
+                        color: const Color(0xFF263238),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        
+        SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
+        
+        // Social Links card
+        _buildInfoCard(
+          title: 'Social Links',
+          children: [
+            if (_user!.linkedinLink != null && _user!.linkedinLink!.isNotEmpty) ...[
+              const SizedBox(height: 8), 
+              _buildInfoItem(
+                icon: Icons.work,
+                label: 'LinkedIn',
+                value: _user!.linkedinLink!,
+                isLink: true,
+              ),
+            ],
+            if (_user!.githubLink != null && _user!.githubLink!.isNotEmpty)
+              _buildInfoItem(
+                icon: Icons.code,
+                label: 'GitHub',
+                value: _user!.githubLink!,
+                isLink: true,
+              ),
+            if (_user!.portfolioLink != null && _user!.portfolioLink!.isNotEmpty)
+              _buildInfoItem(
+                icon: Icons.web,
+                label: 'Portfolio',
+                value: _user!.portfolioLink!,
+                isLink: true,
+              ),
+            if ((_user!.linkedinLink == null || _user!.linkedinLink!.isEmpty) &&
+                (_user!.githubLink == null || _user!.githubLink!.isEmpty) &&
+                (_user!.portfolioLink == null || _user!.portfolioLink!.isEmpty))
+              Container(
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 20 : 24),
+                child: Text(
+                  'No social links added yet',
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopViewMode() {
+    return IntrinsicHeight( 
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 1,
+            child: _buildInfoCard(
+              title: 'Basic Information',
+              children: [
+                Center( 
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 40, 
+                          backgroundColor: const Color(0xFFE6CFE6), 
+                          child: _user!.photoURL != null && _user!.photoURL!.isNotEmpty
+                              ? ClipOval(
+                                  child: Image.network(
+                                    _user!.photoURL!,
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(Icons.person, color: Color(0xFF263238), size: 40);
+                                    },
+                                  ),
+                                )
+                              : const Icon(Icons.person, color: Color(0xFF263238), size: 40),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Name (centered)
+                      Text(
+                        _user!.name,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF263238),
+                          height: 1.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Email (centered)
+                      Text(
+                        _user!.email,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Status badge (centered)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF263238).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Active User',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: const Color(0xFF263238),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(width: 32),
+          
+          Expanded(
+            flex: 2,
+            child: _buildInfoCard(
+              title: 'Social Links',
+              children: [
+                if (_user!.linkedinLink != null && _user!.linkedinLink!.isNotEmpty) ...[
+                  const SizedBox(height: 8), 
+                  _buildInfoItem(
+                    icon: Icons.work,
+                    label: 'LinkedIn',
+                    value: _user!.linkedinLink!,
+                    isLink: true,
+                  ),
+                ],
+                if (_user!.githubLink != null && _user!.githubLink!.isNotEmpty)
+                  _buildInfoItem(
+                    icon: Icons.code,
+                    label: 'GitHub',
+                    value: _user!.githubLink!,
+                    isLink: true,
+                  ),
+                if (_user!.portfolioLink != null && _user!.portfolioLink!.isNotEmpty)
+                  _buildInfoItem(
+                    icon: Icons.web,
+                    label: 'Portfolio',
+                    value: _user!.portfolioLink!,
+                    isLink: true,
+                  ),
+                if ((_user!.linkedinLink == null || _user!.linkedinLink!.isEmpty) &&
+                    (_user!.githubLink == null || _user!.githubLink!.isEmpty) &&
+                    (_user!.portfolioLink == null || _user!.portfolioLink!.isEmpty))
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'No social links added yet',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -526,19 +690,19 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(28.0),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 20.0 : 28.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 22,
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width < 600 ? 18 : 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF263238),
+                color: const Color(0xFF263238),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
             ...children,
           ],
         ),
@@ -553,18 +717,21 @@ class _ProfilePageState extends State<ProfilePage> {
     bool isLink = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20, left: 16),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).size.width < 600 ? 16 : 20, 
+        left: MediaQuery.of(context).size.width < 600 ? 12 : 16
+      ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 6 : 8),
             decoration: BoxDecoration(
               color: const Color(0xFF263238).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 24, color: const Color(0xFF263238)),
+            child: Icon(icon, size: MediaQuery.of(context).size.width < 600 ? 20 : 24, color: const Color(0xFF263238)),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: MediaQuery.of(context).size.width < 600 ? 10 : 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,7 +739,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                     fontWeight: FontWeight.w500,
                     color: Colors.grey[600],
                   ),
@@ -581,7 +748,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 SelectableText(
                   value,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
                     color: isLink ? const Color(0xFF263238) : Colors.black87,
                     decoration: isLink ? TextDecoration.underline : null,
                     fontWeight: FontWeight.w500,
@@ -611,7 +778,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(48.0),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 24.0 : 48.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -619,79 +786,14 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               // Editable avatar section
               _buildEditableAvatarSection(),
-              const SizedBox(height: 48),
+              SizedBox(height: MediaQuery.of(context).size.width < 600 ? 32 : 48),
               
-              // Form fields in a grid layout
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Left column
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _buildFormField(
-                          controller: _nameController,
-                          label: 'Full Name',
-                          icon: Icons.person,
-                          validator: (value) => value?.isEmpty == true ? 'Name is required' : null,
-                        ),
-                        const SizedBox(height: 20),
-                        _buildFormField(
-                          controller: _emailController,
-                          label: 'Email',
-                          icon: Icons.email,
-                          validator: (value) {
-                            if (value?.isEmpty == true) return 'Email is required';
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        _buildFormField(
-                          controller: _linkedinController,
-                          label: 'LinkedIn URL',
-                          icon: Icons.work,
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 32),
-                  
-                  // Right column
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _buildFormField(
-                          controller: _githubController,
-                          label: 'GitHub URL',
-                          icon: Icons.code,
-                        ),
-                        const SizedBox(height: 20),
-                        _buildFormField(
-                          controller: _portfolioController,
-                          label: 'Portfolio URL',
-                          icon: Icons.web,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              // Form fields - responsive layout
+              MediaQuery.of(context).size.width < 600 
+                ? _buildMobileFormFields()
+                : _buildDesktopFormFields(),
               
-              const SizedBox(height: 20),
-              
-              // Additional info field (full width)
-              _buildFormField(
-                controller: _additionalInfoController,
-                label: 'Additional Information',
-                icon: Icons.info,
-                maxLines: 4,
-              ),
-              
-              const SizedBox(height: 40),
+              SizedBox(height: MediaQuery.of(context).size.width < 600 ? 32 : 40),
               
               // Action buttons
               Row(
@@ -700,17 +802,20 @@ class _ProfilePageState extends State<ProfilePage> {
                   TextButton(
                     onPressed: _saving ? null : _cancelEdit,
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.of(context).size.width < 600 ? 20 : 24, 
+                        vertical: MediaQuery.of(context).size.width < 600 ? 12 : 16
+                      ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Cancel',
                       style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF263238),
+                        fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
+                        color: const Color(0xFF263238),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: MediaQuery.of(context).size.width < 600 ? 12 : 16),
                   ElevatedButton(
                     onPressed: _saving ? null : _saveProfile,
                     style: ElevatedButton.styleFrom(
@@ -719,21 +824,24 @@ class _ProfilePageState extends State<ProfilePage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.of(context).size.width < 600 ? 24 : 32, 
+                        vertical: MediaQuery.of(context).size.width < 600 ? 12 : 16
+                      ),
                       elevation: 2,
                     ),
                     child: _saving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
+                        ? SizedBox(
+                            width: MediaQuery.of(context).size.width < 600 ? 18 : 20,
+                            height: MediaQuery.of(context).size.width < 600 ? 18 : 20,
+                            child: const CircularProgressIndicator(
                               strokeWidth: 2,
                               color: Colors.white,
                             ),
                           )
-                        : const Text(
+                        : Text(
                             'Save Changes',
-                            style: TextStyle(fontSize: 16),
+                            style: TextStyle(fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16),
                           ),
                   ),
                 ],
@@ -745,7 +853,264 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _buildMobileFormFields() {
+    return Column(
+      children: [
+        _buildFormField(
+          controller: _nameController,
+          label: 'Full Name',
+          icon: Icons.person,
+          validator: (value) => value?.isEmpty == true ? 'Name is required' : null,
+        ),
+        const SizedBox(height: 16),
+        _buildFormField(
+          controller: _emailController,
+          label: 'Email',
+          icon: Icons.email,
+          validator: (value) {
+            if (value?.isEmpty == true) return 'Email is required';
+            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+              return 'Please enter a valid email';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        _buildFormField(
+          controller: _linkedinController,
+          label: 'LinkedIn URL',
+          icon: Icons.work,
+        ),
+        const SizedBox(height: 16),
+        _buildFormField(
+          controller: _githubController,
+          label: 'GitHub URL',
+          icon: Icons.code,
+        ),
+        const SizedBox(height: 16),
+        _buildFormField(
+          controller: _portfolioController,
+          label: 'Portfolio URL',
+          icon: Icons.web,
+        ),
+        const SizedBox(height: 16),
+        _buildFormField(
+          controller: _additionalInfoController,
+          label: 'Additional Information',
+          icon: Icons.info,
+          maxLines: 4,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopFormFields() {
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left column
+            Expanded(
+              child: Column(
+                children: [
+                  _buildFormField(
+                    controller: _nameController,
+                    label: 'Full Name',
+                    icon: Icons.person,
+                    validator: (value) => value?.isEmpty == true ? 'Name is required' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    controller: _emailController,
+                    label: 'Email',
+                    icon: Icons.email,
+                    validator: (value) {
+                      if (value?.isEmpty == true) return 'Email is required';
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    controller: _linkedinController,
+                    label: 'LinkedIn URL',
+                    icon: Icons.work,
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(width: 32),
+            
+            // Right column
+            Expanded(
+              child: Column(
+                children: [
+                  _buildFormField(
+                    controller: _githubController,
+                    label: 'GitHub URL',
+                    icon: Icons.code,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    controller: _portfolioController,
+                    label: 'Portfolio URL',
+                    icon: Icons.web,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 20),
+        
+        // Additional info field (full width)
+        _buildFormField(
+          controller: _additionalInfoController,
+          label: 'Additional Information',
+          icon: Icons.info,
+          maxLines: 4,
+        ),
+      ],
+    );
+  }
+
   Widget _buildEditableAvatarSection() {
+    return MediaQuery.of(context).size.width < 600 
+      ? _buildMobileAvatarSection()
+      : _buildDesktopAvatarSection();
+  }
+
+  Widget _buildMobileAvatarSection() {
+    return Column(
+      children: [
+        // Avatar with edit button
+        Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: CircleAvatar(
+                radius: 32, 
+                backgroundColor: const Color(0xFFE6CFE6), 
+                child: _user!.photoURL != null && _user!.photoURL!.isNotEmpty
+                    ? ClipOval(
+                        child: Image.network(
+                          _user!.photoURL!,
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.person, color: Color(0xFF263238), size: 32);
+                          },
+                        ),
+                      )
+                    : const Icon(Icons.person, color: Color(0xFF263238), size: 32),
+              ),
+            ),
+            Positioned(
+              bottom: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: _saving ? null : _pickAndUploadAvatar,
+                child: Container(
+                  width: MediaQuery.of(context).size.width < 600 ? 24 : 32,
+                  height: MediaQuery.of(context).size.width < 600 ? 24 : 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF263238),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: _saving
+                        ? SizedBox(
+                            width: MediaQuery.of(context).size.width < 600 ? 12 : 16,
+                            height: MediaQuery.of(context).size.width < 600 ? 12 : 16,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(
+                            Icons.camera_alt, 
+                            color: Colors.white, 
+                            size: MediaQuery.of(context).size.width < 600 ? 14 : 18
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Title and description
+        const Text(
+          'Edit Profile',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF263238),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Update your profile information and avatar',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info, color: Colors.blue[700], size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Click the camera icon to change your avatar',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.blue[700],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopAvatarSection() {
     return Row(
       children: [
         // Avatar with edit button (smaller size)
@@ -783,31 +1148,34 @@ class _ProfilePageState extends State<ProfilePage> {
             Positioned(
               bottom: 6,
               right: 6,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF263238),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  onPressed: _saving ? null : _pickAndUploadAvatar,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.camera_alt, color: Colors.white, size: 20),
-                  padding: const EdgeInsets.all(10),
+              child: GestureDetector(
+                onTap: _saving ? null : _pickAndUploadAvatar,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF263238),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                  ),
                 ),
               ),
             ),
@@ -878,25 +1246,25 @@ class _ProfilePageState extends State<ProfilePage> {
       controller: controller,
       validator: validator,
       maxLines: maxLines,
-      style: const TextStyle(
-        fontSize: 16,
-        color: Color(0xFF263238),
+      style: TextStyle(
+        fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
+        color: const Color(0xFF263238),
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
-          fontSize: 16,
+          fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
           color: Colors.grey[600],
           fontWeight: FontWeight.w500,
         ),
         prefixIcon: Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.all(8),
+          margin: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 8 : 12),
+          padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 6 : 8),
           decoration: BoxDecoration(
             color: const Color(0xFF263238).withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: const Color(0xFF263238), size: 20),
+          child: Icon(icon, color: const Color(0xFF263238), size: MediaQuery.of(context).size.width < 600 ? 18 : 20),
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -920,7 +1288,10 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         filled: true,
         fillColor: Colors.grey[50],
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width < 600 ? 16 : 20, 
+          vertical: MediaQuery.of(context).size.width < 600 ? 16 : 20
+        ),
         floatingLabelBehavior: FloatingLabelBehavior.auto,
       ),
     );

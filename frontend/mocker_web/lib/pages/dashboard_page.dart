@@ -11,7 +11,7 @@ import 'profile_page.dart';
 import 'qa_page.dart';
 import 'feedback_page.dart';
 import 'dart:convert';
-import 'package:web/web.dart' as web;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -64,10 +64,23 @@ class _DashboardPageState extends State<DashboardPage> {
           );
         }
 
-        // logged in, show normal dashboard interface
+        // logged in, responsive layout
+        final screenWidth = MediaQuery.of(context).size.width;
+        final isNarrow = screenWidth < 900;
+
         return Scaffold(
-          body: Row(
-            children: [
+          body: isNarrow
+              ? Column(
+                  children: [
+                    // Top app bar height spacer to match existing navbar spacing if used elsewhere
+                    const SizedBox(height: 0),
+                    Expanded(
+                      child: _pages[_selectedIndex],
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
               // Sidebar
               Material(
                 elevation: 0,
@@ -142,6 +155,59 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ],
           ),
+         bottomNavigationBar: isNarrow
+              ? Container(
+                  color: const Color(0xFFF3F7FF),
+                  child: SafeArea(
+                                         child: Container(
+                       height: 80,
+                       padding: const EdgeInsets.symmetric(horizontal: 8),
+                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: _navItems.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final item = entry.value;
+                          final isSelected = _selectedIndex == idx;
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _selectedIndex = idx),
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 1),
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFFE0EAFF) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      item.icon,
+                                      color: isSelected ? AppTheme.primaryBlue : AppTheme.mediumGray,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      (isNarrow && item.label == 'Mock Interview') ? 'Mock' : item.label,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isSelected ? AppTheme.primaryBlue : AppTheme.mediumGray,
+                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
         );
       },
     );
@@ -229,8 +295,9 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
   }
 
   // Load status from local storage (auto-restore after page refresh)
-  Map<String, String> _loadStatusFromLocal() {
-    final jsonStr = web.window.localStorage[_localStorageKey];
+  Future<Map<String, String>> _loadStatusFromLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_localStorageKey);
     if (jsonStr == null) return {};
     try {
       final map = Map<String, dynamic>.from(jsonDecode(jsonStr));
@@ -241,8 +308,9 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
   }
 
   // Save status to local storage (frontend UI only, doesn't affect backend)
-  void _saveStatusToLocal() {
-    web.window.localStorage[_localStorageKey] = jsonEncode(_workflowStates);
+  Future<void> _saveStatusToLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_localStorageKey, jsonEncode(_workflowStates));
   }
 
   // Initialize: all workflows default to 'In Progress'
@@ -253,7 +321,7 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
         _error = null;
       });
       final loadedWorkflows = await _workflowService.getWorkflows();
-      final localStatus = _loadStatusFromLocal();
+      final localStatus = await _loadStatusFromLocal();
       setState(() {
         workflows = loadedWorkflows;
         _loading = false;
@@ -376,7 +444,10 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
         // Main content
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 64.0, vertical: 32.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 64.0, 
+              vertical: 32.0
+            ),
             child: workflows.isEmpty
                 ? const Center(child: Text('No workflows found. Please prepare for interviews first.'))
                 : Column(
@@ -396,11 +467,11 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                       Expanded(
                         child: GridView.builder(
                           padding: const EdgeInsets.only(bottom: 24),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 3,
                             mainAxisSpacing: 20,
                             crossAxisSpacing: 20,
-                            childAspectRatio: 2.4,
+                            childAspectRatio: MediaQuery.of(context).size.width < 600 ? 3.5 : 2.4,
                           ),
                           itemCount: workflows.length,
                           itemBuilder: (context, idx) {
@@ -422,7 +493,7 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                                   ],
                                 ),
                                 child: Padding(
-                                  padding: const EdgeInsets.all(20),
+                                  padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 20),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -430,22 +501,25 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                                       Text(
                                         workflow.position, 
                                         style: TextStyle(
-                                          fontSize: 16, 
+                                          fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16, 
                                           fontWeight: FontWeight.w600,
                                           color: AppTheme.darkGray,
                                         )
                                       ),
-                                      const SizedBox(height: 6),
+                                      SizedBox(height: MediaQuery.of(context).size.width < 600 ? 4 : 6),
                                       Text(
                                         workflow.company, 
                                         style: TextStyle(
-                                          fontSize: 14, 
+                                          fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14, 
                                           color: AppTheme.mediumGray
                                         )
                                       ),
-                                      const SizedBox(height: 12),
+                                      SizedBox(height: MediaQuery.of(context).size.width < 600 ? 8 : 12),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: MediaQuery.of(context).size.width < 600 ? 8 : 10, 
+                                          vertical: MediaQuery.of(context).size.width < 600 ? 3 : 4
+                                        ),
                                         decoration: BoxDecoration(
                                           color: currentState == 'Complete' 
                                             ? AppTheme.borderGray 
@@ -459,7 +533,7 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                                               ? AppTheme.mediumGray 
                                               : AppTheme.primaryBlue,
                                             fontWeight: FontWeight.w500,
-                                            fontSize: 12,
+                                            fontSize: MediaQuery.of(context).size.width < 600 ? 10 : 12,
                                           ),
                                         ),
                                       ),
