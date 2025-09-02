@@ -3,16 +3,25 @@ import '../models/workflow.dart';
 import '../models/interview.dart';
 import '../services/workflow_service.dart';
 import '../services/interview_service.dart';
+import '../services/voice_interview_service.dart';
 import '../widgets/navbar.dart';
 import '../theme/app_theme.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:record/record.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:typed_data';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+
 
 // interview state enum
 enum InterviewState {
   selectWorkflow,    // select workflow
   interviewing,      // interviewing
+  voiceInterviewing, // voice interviewing
   showingFeedback    // showing feedback
 }
 
@@ -67,10 +76,20 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
   static const int _maxPollingAttempts = 30; 
   static const Duration _pollingInterval = Duration(seconds: 2);
 
+  // Audio recording state
+  final AudioRecorder? _audioRecorder = kIsWeb ? null : AudioRecorder();
+  bool _isRecording = false;
+  Duration _recordingDuration = Duration.zero;
+  Timer? _recordingTimer;
+  List<Uint8List> _audioChunks = [];
+  bool _hasPermission = false;
+  String? _currentQuestion;
+
   @override
   void initState() {
     super.initState();
     _loadAvailableWorkflows();
+    _initializeAudioPermissions();
   }
 
   Future<void> _loadAvailableWorkflows() async {
@@ -97,6 +116,82 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       });
     }
   }
+
+  Future<void> _initializeAudioPermissions() async {
+    if (kIsWeb) {
+      // Web doesn't need explicit permission request
+      setState(() {
+        _hasPermission = true;
+      });
+      return;
+    }
+    
+    // Only check current status, don't request permission yet
+    final status = await Permission.microphone.status;
+    setState(() {
+      _hasPermission = status.isGranted;
+    });
+  }
+
+  // Web-specific audio recording methods
+  Future<void> _startWebRecording() async {
+    try {
+      // For web, we'll show a message that recording is not yet fully supported
+      // but the UI will work for demonstration purposes
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Web recording is in development. Mobile app has full recording support.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      
+      // Simulate recording for demo purposes
+      setState(() {
+        _isRecording = true;
+        _recordingDuration = Duration.zero;
+      });
+
+      // Start recording timer
+      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          _recordingDuration += const Duration(seconds: 1);
+        });
+      });
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start web recording: $e')),
+      );
+    }
+  }
+
+  Future<void> _stopWebRecording() async {
+    try {
+      _recordingTimer?.cancel();
+      
+      setState(() {
+        _isRecording = false;
+      });
+
+      // Simulate audio data for demo
+      final demoBytes = Uint8List.fromList([0x1, 0x2, 0x3, 0x4]); // Demo data
+      _audioChunks.add(demoBytes);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Demo recording completed. Full recording available on mobile.'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to stop web recording: $e')),
+      );
+    }
+  }
+
+
 
   Future<void> _selectWorkflow(Workflow workflow) async {
     setState(() {
@@ -169,6 +264,207 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to start interview: $e')),
+      );
+    }
+  }
+
+  Future<void> _selectVoiceInterview(Workflow workflow) async {
+    try {
+      // Use existing startInterviewSession with is_audio = true for voice interviews
+      final sessionData = await _interviewService.startInterviewSession(
+        workflow.id,
+        _selectedDuration,
+        true, // is_audio = true indicates voice interview
+      );
+
+      setState(() {
+        _selectedWorkflow = workflow;
+        _currentState = InterviewState.voiceInterviewing;
+        _currentQuestion = null; // Reset question when starting new interview
+        _sessionId = sessionData['session_id']; // Get session ID for voice interview
+      });
+      
+      // TODO: Connect to WebSocket for voice interview questions
+      // This will be implemented when backend supports voice interview WebSocket
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start voice interview: $e')),
+      );
+    }
+  }
+  
+  // TODO: This method will be used when WebSocket integration is implemented
+  // void _updateCurrentQuestion(String question) {
+  //   setState(() {
+  //     _currentQuestion = question;
+  //   });
+  // }
+  
+  // End voice interview and get feedback
+  Future<void> _endVoiceInterview() async {
+    if (_sessionId == null || _selectedWorkflow == null) return;
+
+    setState(() {
+      _loadingFeedback = true;
+      _feedbackError = null;
+    });
+
+    try {
+      // Get feedback using existing API
+      final feedbackResponse = await _interviewService.getInterviewFeedback(
+        _selectedWorkflow!.id, 
+        _sessionId!
+      );
+      
+      setState(() {
+        _feedbackData = feedbackResponse;
+        _currentState = InterviewState.showingFeedback;
+        _loadingFeedback = false;
+      });
+      
+    } catch (e) {
+      setState(() {
+        _feedbackError = e.toString();
+        _loadingFeedback = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to get feedback: $e')),
+      );
+    }
+  }
+
+  // Audio recording methods
+  Future<void> _startRecording() async {
+    if (!_hasPermission) {
+      final status = await Permission.microphone.request();
+      if (!status.isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone permission is required for voice recording')),
+        );
+        return;
+      }
+      setState(() {
+        _hasPermission = true;
+      });
+    }
+
+    try {
+      await _audioRecorder?.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: '/tmp/voice_interview_${DateTime.now().millisecondsSinceEpoch}.m4a',
+      );
+
+      setState(() {
+        _isRecording = true;
+        _recordingDuration = Duration.zero;
+        _audioChunks.clear();
+      });
+
+      // Start recording timer
+      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          _recordingDuration += const Duration(seconds: 1);
+        });
+      });
+
+      // Listen to audio data
+      _audioRecorder?.onAmplitudeChanged(const Duration(milliseconds: 100)).listen((amp) {
+        // Handle amplitude changes for visualization if needed
+      });
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start recording: $e')),
+      );
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      final path = await _audioRecorder?.stop();
+      
+      _recordingTimer?.cancel();
+      
+      setState(() {
+        _isRecording = false;
+      });
+
+      if (path != null) {
+        // Read the recorded file and send to backend
+        final file = File(path);
+        if (await file.exists()) {
+          final bytes = await file.readAsBytes();
+          _audioChunks.add(bytes);
+          
+          // Send audio to backend
+          await _sendAudioToBackend(bytes);
+        }
+      }
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to stop recording: $e')),
+      );
+    }
+  }
+
+
+
+  Future<void> _sendAudioToBackend(Uint8List audioData) async {
+    try {
+      if (_selectedWorkflow == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No workflow selected'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Generate a session ID if not exists
+      final sessionId = _sessionId ?? 'voice_session_${DateTime.now().millisecondsSinceEpoch}';
+      
+      final result = await VoiceInterviewService.sendAudioToBackend(
+        audioData: audioData,
+        sessionId: sessionId,
+        workflowId: _selectedWorkflow!.id,
+      );
+
+      if (result['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Audio sent to backend for processing'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Store session ID for future use
+        if (_sessionId == null) {
+          setState(() {
+            _sessionId = sessionId;
+          });
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send audio: ${result['error']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send audio to backend: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -263,6 +559,8 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
     _feedbackPollingTimer?.cancel();
     _stopInterviewTimer();
     _interviewService.disconnectWebSocket();
+    _recordingTimer?.cancel();
+    _audioRecorder?.dispose();
     super.dispose();
   }
 
@@ -360,6 +658,8 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
         return _buildWorkflowSelectionPage();
       case InterviewState.interviewing:
         return _buildChatPage();
+      case InterviewState.voiceInterviewing:
+        return _buildVoiceInterviewPage();
       case InterviewState.showingFeedback:
         return _buildFeedbackPage();
     }
@@ -567,7 +867,8 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                             final workflow = _availableWorkflows[index];
                             return _WorkflowCard(
                               workflow: workflow,
-                              onTap: () => _selectWorkflow(workflow),
+                              onTextInterview: () => _selectWorkflow(workflow),
+                              onVoiceInterview: () => _selectVoiceInterview(workflow),
                             );
                           },
                         ),
@@ -970,6 +1271,304 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoiceInterviewPage() {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width < 600 ? 16.0 : 64.0, 
+        vertical: MediaQuery.of(context).size.width < 600 ? 16.0 : 32.0
+      ),
+      child: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width < 600 ? double.infinity : 800
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 8 : 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE6CFE6).withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.mic,
+                            color: const Color(0xFF263238),
+                            size: MediaQuery.of(context).size.width < 600 ? 20 : 24,
+                          ),
+                        ),
+                        SizedBox(width: MediaQuery.of(context).size.width < 600 ? 12 : 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Voice Interview: ${_selectedWorkflow?.position}',
+                                style: TextStyle(
+                                  fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF263238),
+                                ),
+                              ),
+                              SizedBox(height: MediaQuery.of(context).size.width < 600 ? 2 : 4),
+                              Text(
+                                'Company: ${_selectedWorkflow?.company}',
+                                style: TextStyle(
+                                  fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _goBackToWorkflowSelection,
+                          icon: Icon(Icons.arrow_back, size: MediaQuery.of(context).size.width < 600 ? 14 : 16),
+                          label: const Text('Back'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.darkGray,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: MediaQuery.of(context).size.width < 600 ? 6 : 8, 
+                              vertical: MediaQuery.of(context).size.width < 600 ? 2 : 4
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
+                    Text(
+                      'Duration: ${_selectedDuration} minutes',
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 32),
+              
+              // Voice recording area
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[200]!),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 20 : 32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Question display area
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F5F5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.question_answer,
+                                    size: MediaQuery.of(context).size.width < 600 ? 18 : 20,
+                                    color: AppTheme.primaryBlue,
+                                  ),
+                                  SizedBox(width: MediaQuery.of(context).size.width < 600 ? 8 : 10),
+                                  Text(
+                                    'Interview Question',
+                                    style: TextStyle(
+                                      fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF263238),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 16),
+                              Text(
+                                _currentQuestion ?? 'Waiting for question from interviewer...',
+                                style: TextStyle(
+                                  fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
+                                  color: const Color(0xFF263238),
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        SizedBox(height: MediaQuery.of(context).size.width < 600 ? 20 : 24),
+                        
+                        // Recording status
+                        if (_isRecording) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: MediaQuery.of(context).size.width < 600 ? 16 : 20,
+                                height: MediaQuery.of(context).size.width < 600 ? 16 : 20,
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              SizedBox(width: MediaQuery.of(context).size.width < 600 ? 8 : 12),
+                              Text(
+                                'Recording... ${_formatDuration(_recordingDuration)}',
+                                style: TextStyle(
+                                  fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ] else ...[
+                          Text(
+                            'Ready to record your answer',
+                            style: TextStyle(
+                              fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 18,
+                              color: Colors.grey[600],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                        
+                        SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 40),
+                        
+                        // Recording controls
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Record/Stop button
+                            Container(
+                              width: MediaQuery.of(context).size.width < 600 ? 65 : 100,
+                              height: MediaQuery.of(context).size.width < 600 ? 55 : 100,
+                              decoration: BoxDecoration(
+                                color: _isRecording ? Colors.red : AppTheme.primaryBlue,
+                                borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width < 600 ? 12 : 50),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (_isRecording ? Colors.red : AppTheme.primaryBlue).withValues(alpha: 0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: IconButton(
+                                onPressed: _isRecording 
+                                  ? (kIsWeb ? _stopWebRecording : _stopRecording)
+                                  : (kIsWeb ? _startWebRecording : _startRecording),
+                                icon: Icon(
+                                  _isRecording ? Icons.stop : Icons.mic,
+                                  size: MediaQuery.of(context).size.width < 600 ? 24 : 40,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            
+
+                          ],
+                        ),
+                        
+                        SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 32),
+                        
+                        // Status messages
+                        // Note: iOS simulator cannot record audio, use real device for testing
+                        
+                        if (_audioChunks.isNotEmpty) ...[
+                          SizedBox(height: MediaQuery.of(context).size.width < 600 ? 8 : 12),
+                          Container(
+                            padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 16),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.green),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.green, size: MediaQuery.of(context).size.width < 600 ? 16 : 20),
+                                SizedBox(width: MediaQuery.of(context).size.width < 600 ? 6 : 8),
+                                Expanded(
+                                  child: Text(
+                                    '${_audioChunks.length} audio clip${_audioChunks.length > 1 ? 's' : ''} sent to backend',
+                                    style: TextStyle(
+                                      fontSize: MediaQuery.of(context).size.width < 600 ? 11 : 14,
+                                      color: Colors.green[800],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        
+                        // End interview button
+                        if (_audioChunks.isNotEmpty) ...[
+                          SizedBox(height: MediaQuery.of(context).size.width < 600 ? 16 : 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _endVoiceInterview,
+                              icon: const Icon(Icons.stop_circle),
+                              label: const Text('End Voice Interview'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: MediaQuery.of(context).size.width < 600 ? 16 : 24,
+                                  vertical: MediaQuery.of(context).size.width < 600 ? 12 : 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1741,9 +2340,14 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
 
 class _WorkflowCard extends StatelessWidget {
   final Workflow workflow;
-  final VoidCallback onTap;
+  final VoidCallback onTextInterview;
+  final VoidCallback onVoiceInterview;
 
-  const _WorkflowCard({required this.workflow, required this.onTap});
+  const _WorkflowCard({
+    required this.workflow, 
+    required this.onTextInterview,
+    required this.onVoiceInterview,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1756,62 +2360,101 @@ class _WorkflowCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.borderGray, width: 1.5),
         ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-                      child: Padding(
-              padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+        child: Padding(
+          padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 14 : 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          workflow.position,
-                          style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                  Expanded(
+                    child: Text(
+                      workflow.position,
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: MediaQuery.of(context).size.width < 600 ? 6 : 8),
+              Text(
+                workflow.company,
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
+                  color: const Color(0xFF263238),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).size.width < 600 ? 12 : 20),
+              
+              // Interview type selection buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: onTextInterview,
+                      icon: Icon(
+                        Icons.chat_bubble_outline,
+                        size: MediaQuery.of(context).size.width < 600 ? 16 : 18,
+                      ),
+                      label: Text(
+                        'Text Interview',
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 13,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: MediaQuery.of(context).size.width < 600 ? 14 : 16,
-                        color: const Color(0xFF263238),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.lightBlue,
+                        foregroundColor: AppTheme.primaryBlue,
+                        elevation: 2,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: MediaQuery.of(context).size.width < 600 ? 8 : 12,
+                          vertical: MediaQuery.of(context).size.width < 600 ? 6 : 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                    ],
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 6 : 8),
-                  Text(
-                    workflow.company,
-                    style: TextStyle(
-                      fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
-                      color: const Color(0xFF263238),
                     ),
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.width < 600 ? 10 : 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.lightBlue,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Start Interview',
-                      style: TextStyle(
-                        fontSize: MediaQuery.of(context).size.width < 600 ? 11 : 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.primaryBlue,
+                  SizedBox(width: MediaQuery.of(context).size.width < 600 ? 8 : 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: onVoiceInterview,
+                      icon: Icon(
+                        Icons.mic,
+                        size: MediaQuery.of(context).size.width < 600 ? 16 : 18,
+                      ),
+                      label: Text(
+                        'Voice Interview',
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.lightBlue,
+                        foregroundColor: AppTheme.primaryBlue,
+                        elevation: 2,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: MediaQuery.of(context).size.width < 600 ? 8 : 12,
+                          vertical: MediaQuery.of(context).size.width < 600 ? 6 : 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
+          ),
         ),
       ),
     );
