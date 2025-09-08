@@ -75,3 +75,66 @@ class GeneralBQ(BaseModel):
     category: Optional[str] = None
     tags: Optional[List[str]] = None
 
+
+# Coding Problem System Data Schema
+class Links(BaseModel):
+    problem: Optional[str]
+    description: Optional[str]
+    solutions: Optional[str]
+
+
+class Stats(BaseModel):
+    acceptance_rate: Optional[float]
+    submissions: Optional[int]
+    accepted: Optional[int]
+    likes: Optional[int]
+    dislikes: Optional[int]
+
+
+class Example(BaseModel):
+    input: str
+    output: str
+    explanation: Optional[str] = None
+
+
+class Statement(BaseModel):
+    description: str
+    examples: List[Example]
+    constraints: List[str]
+
+
+class SolutionCode(BaseModel):
+    python: Optional[str] = None
+    java: Optional[str] = None
+    cpp: Optional[str] = None
+
+
+class Solution(BaseModel):
+    approach: str
+    time_complexity: Optional[str] = None
+    space_complexity: Optional[str] = None
+    code: Optional[SolutionCode] = None
+
+
+class SimilarQuestion(BaseModel):
+    title: str
+    slug: str
+    difficulty: str
+
+
+class CodingProblems(BaseModel):
+    id: str
+    title: str
+    slug: str
+    difficulty: str
+    category: Optional[str] = None
+    topics: Optional[List[str]] = []
+
+    links: Links
+    stats: Stats
+    statement: Statement
+
+    hints: Optional[List[str]] = []
+    solutions: List[Solution] = []
+    best_solution: Optional[Solution] = None
+    similar_questions: List[SimilarQuestion] = []

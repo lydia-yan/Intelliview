@@ -5,7 +5,7 @@ from firebase_admin import firestore
 
 from backend.data.schemas import (
     Profile, Interview, Workflow, Feedback,
-    PersonalExperience, RecommendedQA, GeneralBQ
+    PersonalExperience, RecommendedQA, GeneralBQ, CodingProblems
 )
 from backend.tools.firebase_config import db
 
@@ -295,5 +295,59 @@ class FirestoreDB:
             "message": f"Deleted {deleted_count} behavioral questions from 'bqs' collection successfully",
             "data": None
         }
+    
+    # --- Coding Problems Operations ---
+    def set_coding_problems(self, problems: List[CodingProblems]) -> Dict[str, str]:
+        """Set coding problems."""
+        col = self.db.collection("problems")
+        BATCH_SIZE = 500
+        written = 0
+        batches = 0
+
+        for start in range(0, len(problems), BATCH_SIZE):
+            batch = self.db.batch()
+            for p in problems[start:start + BATCH_SIZE]:
+                doc_id = str(p.id)  # ensure string
+                data = p.model_dump(exclude={"id"})
+                batch.set(col.document(doc_id), data, merge=True)  # merge=False to overwrite
+                written += 1
+            batch.commit()
+            batches += 1
+
+        return {
+            "message": "Coding problems written",
+            "written": written,
+            "batches": batches,
+        }
+
+
+    def get_coding_problems(self) -> Optional[List[Dict[str, Any]]]:
+        """Retrieve coding problems."""
+        docs = list(self.db.collection("problems").stream())
+        if not docs:
+            return {
+                "message": "Coding problems not found",
+                "data": None
+            }
+        return {
+            "message": "Coding Problems retrieved successfully",
+            "data": [doc.to_dict() for doc in docs]
+        }
+        
+
+    def delete_coding_problems(self) -> Dict[str, str]:
+        """Delete system data (coding problems)."""
+        docs = list(self.db.collection("problems").stream())
+        deleted_count = 0
+        for doc in docs:
+            doc.reference.delete()
+            deleted_count += 1
+
+        return {
+            "message": f"Deleted {deleted_count} coding problems from 'problems' collection successfully",
+            "data": None
+        }
+    
+
 # Create shared FirestoreDB instance
 firestore_db = FirestoreDB(db)
