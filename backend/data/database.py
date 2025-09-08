@@ -321,7 +321,7 @@ class FirestoreDB:
         }
 
 
-    def get_coding_problems(self) -> Optional[List[Dict[str, Any]]]:
+    def get_coding_problems(self) -> Optional[Dict[str, Any]]:
         """Retrieve coding problems."""
         docs = list(self.db.collection("problems").stream())
         if not docs:
