@@ -293,10 +293,10 @@ def split_description_parts(
 
 def normalize_one(raw: Dict[str, Any], overrides: Dict[str, Any], start_id: Optional[int] = None,) -> Dict[str, Any]:
     """
-    Split description text into exactly three parts:
-    - description: main statement only
-    - examples: extracted example dicts
-    - constraints: extracted bullet list
+    Normalize a single problem record.
+    
+    Processes the raw problem data and optional overrides to produce a cleaned dictionary
+    with normalized fields such as description, examples, constraints, stats, links, topics, and hints.
     """
 
     desc_html = raw.get("description", "")
