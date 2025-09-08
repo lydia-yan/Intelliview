@@ -23,7 +23,7 @@ backend/
 -- database.py # Firestore client init (used by firestore_db)
 -- schemas.py # Pydantic model: CodingProblems
 - scripts/
--- run_clean_and_upload.py # <— this script
+-- run_and_upload.py # <— this script
 -- leetcode_problems.json # input (raw)
 -- cleaned.json # output (generated)
 -- normalize.py # normalization logic (imported by the script)
