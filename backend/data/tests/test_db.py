@@ -153,3 +153,20 @@ def test_get_interviews_for_workflow(setup_workflow_and_interview):
 
     assert isinstance(sessions["data"], list)
     assert any(s["interviewId"] == session_id for s in sessions["data"])
+
+# ------------------ Test Get Problem by ID ------------------
+def test_get_coding_problem_by_id_not_found():
+    result = database.firestore_db.get_coding_problems("nonexistent-id")
+    assert "not found" in result["message"]
+    assert result["data"] is None
+
+
+def test_get_coding_problem_by_id_found():
+    # Insert a problem first
+    problem_id = "123"
+    problem_data = {"title": "Two Sum"}
+    database.firestore_db.db.collection("problems").document(problem_id).set(problem_data)
+
+    result = database.firestore_db.get_coding_problems(problem_id)
+    assert "successfully" in result["message"]
+    assert result["data"]["title"] == "Two Sum"
