@@ -321,17 +321,17 @@ class FirestoreDB:
         }
 
 
-    def get_coding_problems(self) -> Optional[Dict[str, Any]]:
-        """Retrieve coding problems."""
-        docs = list(self.db.collection("problems").stream())
-        if not docs:
+    def get_coding_problems(self, problem_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve a single coding problem by ID."""
+        doc_ref = self.db.collection("problems").document(problem_id).get()
+        if not doc_ref.exists:
             return {
-                "message": "Coding problems not found",
+                "message": f"Coding problem with id {problem_id} not found",
                 "data": None
             }
         return {
-            "message": "Coding Problems retrieved successfully",
-            "data": [doc.to_dict() for doc in docs]
+            "message": "Coding problem retrieved successfully",
+            "data": doc_ref.to_dict()
         }
         
 
