@@ -7,6 +7,12 @@ Provides formatted output for development and debugging
 import os
 import sys
 import json
+import pytest
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Skipping Firestore-dependent tests in CI"
+)
 
 # Add project root directory to Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../")))

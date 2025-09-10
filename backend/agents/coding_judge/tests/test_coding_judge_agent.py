@@ -6,7 +6,12 @@ from backend.agents.coding_judge.tests.mock_data import state
 from backend.coordinator.session_manager import session_service  # Global service used in your code
 from backend.data.schemas import CodingProblems, CodingReview, Scores, ConversationScores
 from backend.agents.coding_judge.agent import _run_coding_judge_from_session
+import os
 
+pytestmark = pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Skipping Firestore-dependent tests in CI"
+)
 
 @pytest.mark.asyncio
 async def test_run_judge_from_session_valid_output():

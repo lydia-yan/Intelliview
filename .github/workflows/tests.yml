@@ -34,6 +34,7 @@ jobs:
       - name: Run all tests
         run: |
           cd backend
+          export CI=true
           echo '{}' > dummy.json
           export GOOGLE_CLOUD_PROJECT=dummy
           export FIREBASE_KEY_PATH=$(pwd)/dummy.json

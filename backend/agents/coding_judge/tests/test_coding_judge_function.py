@@ -1,5 +1,11 @@
 # tests/test_coding_judge.py
 import pytest
+import os
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Skipping Firestore-dependent tests in CI"
+)
 from backend.agents.coding_judge.agent import (
     _bigo_similarity,
     _efficiency_components,
