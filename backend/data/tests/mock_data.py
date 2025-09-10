@@ -123,24 +123,17 @@ coding_submission = {
     "claimed_space": "O(n)",
 }
 
+coding_submission = {
+    "code": "def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i",
+    "language": "python",
+    "claimed_time": "O(n)",
+    "claimed_space": "O(n)",
+}
+
 coding_review = {
     "problem_slug": "two-sum",
     "scores": {
         "overall": 82.5,
-        "breakdown": {
-            "code": {
-                "correctness": 95.0,
-                "efficiency": 70.0,
-                "robustness": 60.0,
-                "style": 80.0,
-            },
-            "conversation": {
-                "understanding": 75.0,
-                "awareness": 40.0,
-                "defense": 65.0,
-                "clarity": 80.0,
-            },
-        },
         "code_score": {
             "correctness": 95.0,
             "efficiency": 70.0,
@@ -161,11 +154,10 @@ coding_review = {
     "feedback": {
         "strength": "🌟 Strongest area: Correctness (95.0).",
         "opportunity": "🎯 Biggest opportunity: Awareness (40.0).",
-        "details": [
-            "💻 Code feedback: - Time gap vs optimal",
-            "🗣️ Conversation feedback: - Missed large input edge case",
-        ],
-        "next_step": "✅ Next step: Practice explicitly stating edge cases before coding.",
+        "next_step": {   # required dict of lists
+            "practice": ["✅ Practice edge cases before coding."],
+            "review": ["📚 Review complexity trade-offs"]
+        },
         "code": ["💻 Code feedback: - Time gap vs optimal"],
         "conversation": ["🗣️ Conversation feedback: - Missed large input edge case"],
     },

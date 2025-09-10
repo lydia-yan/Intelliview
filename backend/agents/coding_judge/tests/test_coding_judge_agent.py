@@ -1,13 +1,15 @@
 from unittest.mock import patch, AsyncMock
 import pytest
-import json
+import json, os
 from backend.agents import coding_judge
 from backend.agents.coding_judge.tests.mock_data import state
 from backend.coordinator.session_manager import session_service  # Global service used in your code
 from backend.data.schemas import CodingProblems, CodingReview, Scores, ConversationScores
 from backend.agents.coding_judge.agent import _run_coding_judge_from_session
 
-
+@pytest.mark.skipif(
+    os.getenv("CI") == "true",reason="Requires Google Cloud credentials"
+)
 @pytest.mark.asyncio
 async def test_run_judge_from_session_valid_output():
     # Setup test data
