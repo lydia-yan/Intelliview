@@ -44,4 +44,5 @@ jobs:
           source ~/.venv/bin/activate
           cd backend
           export CI=true
+          export GOOGLE_CLOUD_PROJECT=dummy
           pytest --maxfail=5 --disable-warnings -v --tb=short
