@@ -39,7 +39,7 @@ jobs:
             "type": "service_account",
             "project_id": "dummy",
             "private_key_id": "dummy",
-            "private_key": "-----BEGIN PRIVATE KEY-----\nFAKE\n-----END PRIVATE KEY-----\n",
+            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASC...\n-----END PRIVATE KEY-----\n",
             "client_email": "dummy@dummy.iam.gserviceaccount.com",
             "client_id": "1234567890",
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
