@@ -124,3 +124,5 @@ torch==2.0.1
 triton==2.0.0
 torchvision==0.15.2
 wheel==0.44.0
+pylint==3.3.8
+pylint-venv==3.0.4
