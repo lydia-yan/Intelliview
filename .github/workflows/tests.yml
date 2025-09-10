@@ -34,8 +34,9 @@ jobs:
       - name: Run all tests
         run: |
           cd backend
+          echo '{}' > dummy.json
           export GOOGLE_CLOUD_PROJECT=dummy
-          export FIREBASE_KEY_PATH=dummy.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/dummy.json
           export GOOGLE_CLOUD_LOCATION=us-central1
           export GOOGLE_GENAI_USE_VERTEXAI=TRUE
           pytest --maxfail=5 --disable-warnings -q
