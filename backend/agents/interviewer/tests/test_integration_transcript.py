@@ -29,9 +29,10 @@ async def test_interview_agent_conversation():
     user_id = "test_user_123"
     workflow_id = "4VpAXA35z1W0rCYDm3eH"
     duration = 10  # in minutes
+    mode = "general"
 
     live_events, live_queue, session = await start_agent_session(
-        session_id, user_id, workflow_id, duration, is_audio=False
+        session_id, user_id, duration, is_audio=False, workflow_id=workflow_id
     )
 
     print("\n--- Initial Session State ---")
@@ -73,7 +74,7 @@ async def test_saves_to_db_after_expiry(mock_save_transcript):
     
     # Start session
     live_events, live_queue, session = await start_agent_session(
-        session_id, user_id, workflow_id, duration_minutes=10, is_audio=False
+        session_id, user_id, 10, is_audio=False, workflow_id=workflow_id
     )
 
     # Manually set start time to 11 minutes ago to simulate expiry
