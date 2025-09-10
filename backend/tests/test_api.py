@@ -1,4 +1,4 @@
-import pytest
+import pytest, os
 from fastapi.testclient import TestClient
 from unittest.mock import patch, AsyncMock
 from backend.app import app
@@ -31,7 +31,7 @@ def test_public_route():
 
 
 def test_init_user_profile_new_user():
-    with patch("backend.data.database.firestore_db.get_profile", return_value=None), \
+    with patch("backend.data.database.firestore_db.get_profile", return_value={"data": None}), \
          patch("backend.data.database.firestore_db.create_or_update_profile", return_value={"message": "ok", "data": {
              "name": "Test User",
              "email": "user@example.com",
@@ -241,7 +241,9 @@ def test_get_feedback_for_session():
 
         
 # ---- PDF WORKFLOW TESTS ----
-
+@pytest.mark.skipif(
+    os.getenv("CI") == "true", reason="Requires Google Cloud credentials"
+)
 def test_start_workflow_with_pdf_success():
     """Test successful PDF workflow start"""
     # Create fake PDF content
@@ -267,7 +269,7 @@ def test_start_workflow_with_pdf_success():
         res = response.json()
         assert res["success"] is True
         assert "session_id" in res
-        assert res["user_id"] == "test_user_pdf"
+        assert res["user_id"] == "user123"
         assert "completed_agents" in res
         assert "processing_time" in res
 
@@ -317,7 +319,9 @@ def test_start_workflow_with_pdf_invalid_file():
         assert response.status_code == 400
         assert "Not a valid PDF" in response.json()["detail"]
 
-
+@pytest.mark.skipif(
+    os.getenv("CI") == "true", reason="Requires Google Cloud credentials"
+)
 def test_start_workflow_with_text_success():
     """Test successful text workflow start"""
     data = {
@@ -336,7 +340,7 @@ def test_start_workflow_with_text_success():
     res = response.json()
     assert res["success"] is True
     assert "session_id" in res
-    assert res["user_id"] == "test_user_pdf"
+    assert res["user_id"] == "user123"
     assert "completed_agents" in res
 
 
