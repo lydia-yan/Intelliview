@@ -1,4 +1,4 @@
-import asyncio, json, pytest
+import asyncio, json, pytest, os
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 from backend.agents.interviewer.tests.mock_data import recommendedQAs, personalExperience, profile_data
@@ -22,7 +22,10 @@ class MockWebSocket:
     def simulate_user_message(self, mime_type, data):
         self.queue.put_nowait(json.dumps({"mime_type": mime_type, "data": data}))
 
-
+@pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Requires Google Cloud credentials"
+)
 @pytest.mark.asyncio
 async def test_interview_agent_conversation():
     session_id = "manual-session-test"

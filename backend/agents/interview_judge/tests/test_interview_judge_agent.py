@@ -1,11 +1,15 @@
 import pytest
-import json
+import json, os
 from unittest.mock import patch
 from backend.data.tests.mock_data import personalExperience, recommendedQAs, transcript
 from backend.agents.interview_judge.agent import _run_judge_from_session
 from backend.data.schemas import Feedback
 from backend.coordinator.session_manager import session_service  # Global service used in your code
 
+@pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Requires Google Cloud credentials"
+)
 @pytest.mark.asyncio
 async def test_run_judge_from_session_valid_output():
     # Setup test data

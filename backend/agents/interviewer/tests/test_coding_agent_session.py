@@ -1,4 +1,4 @@
-import asyncio, json, pytest
+import asyncio, json, pytest, os
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 from backend.agents.interviewer.agent import (
@@ -176,6 +176,10 @@ async def test_coding_mode_saves_on_expiry(mock_save_transcript, mock_get_code_s
     mock_save_transcript.assert_called_once()
     print("✅ save_transcript called after coding session expiry")
 
+@pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Firestore integration skipped in CI"
+)
 @pytest.mark.asyncio
 async def test_integration_coding_mode_with_db():
     session_id = "coding-session-integration"

@@ -1,4 +1,4 @@
-import asyncio, json, pytest
+import asyncio, json, pytest, os
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 from backend.data.tests.mock_data import recommendedQAs, personalExperience, transcript
@@ -66,6 +66,10 @@ async def test_feedback_is_generated_and_stored(
 
     print("Feedback and transcript were both generated and stored correctly.")
 
+@pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Requires Google Cloud credentials"
+)
 @pytest.mark.asyncio
 async def test_full_interview_to_feedback_flow():
     session_id = "integration-session"
