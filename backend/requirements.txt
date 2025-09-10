@@ -120,7 +120,6 @@ pyls-spyder==0.4.0
 setuptools==78.1.0
 sympy==1.13.1
 tiktoken==0.9.0
-triton==2.0.0
 wheel==0.44.0
 pylint==3.3.8
 pylint-venv==3.0.4
