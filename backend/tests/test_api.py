@@ -1,4 +1,4 @@
-import pytest
+import pytest, os
 from fastapi.testclient import TestClient
 from unittest.mock import patch, AsyncMock
 from backend.app import app
@@ -241,7 +241,10 @@ def test_get_feedback_for_session():
 
         
 # ---- PDF WORKFLOW TESTS ----
-
+@pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Requires Google Cloud credentials"
+)
 def test_start_workflow_with_pdf_success():
     """Test successful PDF workflow start"""
     # Create fake PDF content
@@ -294,7 +297,10 @@ def test_start_workflow_with_pdf_file_too_large():
         assert response.status_code == 413
         assert "File size exceeds" in response.json()["detail"]
 
-
+@pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Requires Google Cloud credentials"
+)
 def test_start_workflow_with_pdf_invalid_file():
     """Test invalid PDF file error"""
     from backend.services.pdf.exceptions import InvalidPDFError
