@@ -51,4 +51,4 @@ jobs:
           export FIREBASE_KEY_PATH=$(pwd)/dummy.json
           export GOOGLE_CLOUD_LOCATION=us-central1
           export GOOGLE_GENAI_USE_VERTEXAI=TRUE
-          pytest --maxfail=5 --disable-warnings -q
+          pytest --maxfail=5 --disable-warnings -v --tb=short
