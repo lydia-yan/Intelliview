@@ -22,34 +22,26 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'   # <-- enables built-in pip cache if you use `requirements.txt`
-          cache-dependency-path: backend/requirements.txt
+
+      - name: Cache venv
+        uses: actions/cache@v4
+        with:
+          path: ~/.venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ matrix.python-version }}-
 
       - name: Install dependencies
         run: |
-          cd backend
+          python -m venv ~/.venv
+          source ~/.venv/bin/activate
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r backend/requirements.txt
           pip install pytest pytest-asyncio
 
       - name: Run all tests
         run: |
+          source ~/.venv/bin/activate
           cd backend
           export CI=true
-          echo '{
-            "type": "service_account",
-            "project_id": "dummy",
-            "private_key_id": "dummy",
-            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASC...\n-----END PRIVATE KEY-----\n",
-            "client_email": "dummy@dummy.iam.gserviceaccount.com",
-            "client_id": "1234567890",
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dummy%40dummy.iam.gserviceaccount.com"
-          }' > dummy.json
-          export GOOGLE_CLOUD_PROJECT=dummy
-          export FIREBASE_KEY_PATH=$(pwd)/dummy.json
-          export GOOGLE_CLOUD_LOCATION=us-central1
-          export GOOGLE_GENAI_USE_VERTEXAI=TRUE
           pytest --maxfail=5 --disable-warnings -v --tb=short
