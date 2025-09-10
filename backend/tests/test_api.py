@@ -297,10 +297,6 @@ def test_start_workflow_with_pdf_file_too_large():
         assert response.status_code == 413
         assert "File size exceeds" in response.json()["detail"]
 
-@pytest.mark.skipif(
-    os.getenv("CI") == "true",
-    reason="Requires Google Cloud credentials"
-)
 def test_start_workflow_with_pdf_invalid_file():
     """Test invalid PDF file error"""
     from backend.services.pdf.exceptions import InvalidPDFError
@@ -323,7 +319,10 @@ def test_start_workflow_with_pdf_invalid_file():
         assert response.status_code == 400
         assert "Not a valid PDF" in response.json()["detail"]
 
-
+@pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Requires Google Cloud credentials"
+)
 def test_start_workflow_with_text_success():
     """Test successful text workflow start"""
     data = {
