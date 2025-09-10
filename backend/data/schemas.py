@@ -76,7 +76,7 @@ class GeneralBQ(BaseModel):
     tags: Optional[List[str]] = None
 
 
-# Coding Problem System Data Schema
+# Coding Problem Data Schema
 class Links(BaseModel):
     problem: Optional[str]
     description: Optional[str]
@@ -109,13 +109,6 @@ class SolutionCode(BaseModel):
     cpp: Optional[str] = None
 
 
-class Solution(BaseModel):
-    approach: str
-    time_complexity: Optional[str] = None
-    space_complexity: Optional[str] = None
-    code: Optional[SolutionCode] = None
-
-
 class SimilarQuestion(BaseModel):
     title: str
     slug: str
@@ -135,6 +128,53 @@ class CodingProblems(BaseModel):
     statement: Statement
 
     hints: Optional[List[str]] = []
-    solutions: List[Solution] = []
-    best_solution: Optional[Solution] = None
+    solutions: Optional[SolutionCode] = None
     similar_questions: List[SimilarQuestion] = []
+
+
+# Coding Review Data Schema
+class ScoreBreakdown(BaseModel):
+    correctness: float = Field(..., ge=0, le=100)
+    efficiency: float = Field(..., ge=0, le=100)
+    robustness: float = Field(..., ge=0, le=100)
+    style: float = Field(..., ge=0, le=100)
+    efficiency_breakdown: Optional[Dict[str, Dict[str, float]]] = None
+
+
+class ConversationScores(BaseModel):
+    understanding: float = Field(..., ge=0, le=100)
+    awareness: float = Field(..., ge=0, le=100)
+    defense: float = Field(..., ge=0, le=100)
+    clarity: float = Field(..., ge=0, le=100)
+
+
+class Scores(BaseModel):
+    overall: float = Field(..., ge=0, le=100)
+    code_score: ScoreBreakdown
+    conversation_score: ConversationScores
+
+
+class CodingFeedback(BaseModel):
+    code: Optional[List[str]] = []
+    conversation: Optional[List[str]] = []
+    strength: str
+    opportunity: str
+    next_step: Dict[str, List[str]]
+
+
+class CodingReview(BaseModel):
+    problem_slug: Optional[str] = None
+    scores: Scores
+    feedback: CodingFeedback
+    reviewer_result: Dict[str, Any]  # raw JSON from AI reviewer
+    optimal_complexity: Dict[str, Any]  # {"time":..., "space":..., "edge_keywords": [...]}
+    transcript: List[Dict[str, Any]] 
+    createAt: datetime = None
+
+# --- Code submission
+class CodeSubmission(BaseModel):
+    code: str
+    language: str
+    claimed_time: str 
+    claimed_space: str
+    createAt: datetime = None

@@ -14,5 +14,13 @@ class InterviewPrepareRequest(BaseModel):
 
 class InterviewStartRequest(BaseModel):
     workflow_id: str
-    duration: int = 15 #can set the default value here
+    duration: int | None = None #can set the default value here
+    is_audio: bool = False
+
+class CodingSubmitRequest(BaseModel):
+    problem_id: str   # or whole problem JSON, depending on how you store
+    code: str
+    language: str
+    claimed_time: str | None = None
+    claimed_space: str | None = None
     is_audio: bool = False
