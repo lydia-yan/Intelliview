@@ -49,5 +49,5 @@ def test_save_feedback_to_db_calls_firestore():
     with patch("backend.data.database.firestore_db.set_feedback") as mock_set:
         mock_set.return_value = {"message": "saved"}
         result = save_feedback_to_db(mock_session, feedback_dict)
-        mock_set.assert_called_once_with("test_user", "test_session_id", Feedback(**feedback_dict))
+        mock_set.assert_called_once_with("test_user", "workflow_id",  "test_session_id", Feedback(**feedback_dict))
         assert result["message"] == "saved"

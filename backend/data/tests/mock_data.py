@@ -161,11 +161,11 @@ coding_review = {
     "feedback": {
         "strength": "🌟 Strongest area: Correctness (95.0).",
         "opportunity": "🎯 Biggest opportunity: Awareness (40.0).",
-        "details": [
-            "💻 Code feedback: - Time gap vs optimal",
-            "🗣️ Conversation feedback: - Missed large input edge case",
-        ],
-        "next_step": "✅ Next step: Practice explicitly stating edge cases before coding.",
+       "feedback": {
+        "next_step": {
+            "text": "✅ Next step: Practice edge cases before coding."  # now it's a dict
+            }
+        },
         "code": ["💻 Code feedback: - Time gap vs optimal"],
         "conversation": ["🗣️ Conversation feedback: - Missed large input edge case"],
     },
