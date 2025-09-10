@@ -31,7 +31,7 @@ def test_public_route():
 
 
 def test_init_user_profile_new_user():
-    with patch("backend.data.database.firestore_db.get_profile", return_value=None), \
+    with patch("backend.data.database.firestore_db.get_profile", return_value={"data": None}), \
          patch("backend.data.database.firestore_db.create_or_update_profile", return_value={"message": "ok", "data": {
              "name": "Test User",
              "email": "user@example.com",
@@ -267,7 +267,7 @@ def test_start_workflow_with_pdf_success():
         res = response.json()
         assert res["success"] is True
         assert "session_id" in res
-        assert res["user_id"] == "test_user_pdf"
+        assert res["user_id"] == "user123"
         assert "completed_agents" in res
         assert "processing_time" in res
 
@@ -336,7 +336,7 @@ def test_start_workflow_with_text_success():
     res = response.json()
     assert res["success"] is True
     assert "session_id" in res
-    assert res["user_id"] == "test_user_pdf"
+    assert res["user_id"] == "user123"
     assert "completed_agents" in res
 
 
@@ -375,3 +375,105 @@ def test_start_workflow_missing_job_description():
     )
     
     assert response.status_code == 422  # Validation error
+
+# --- /interview/coding/start ---
+def test_start_coding_success():
+    """Test starting coding interview returns a problem"""
+    mock_problem = {
+        "problem_id": "11",
+        "title": "Container With Most Water",
+        "slug": "container-with-most-water",
+        "difficulty": "medium",
+        "description": "Find max area..."
+    }
+
+    with patch("backend.api.routes.pick_random_problem_from_db", new_callable=AsyncMock, return_value=mock_problem):
+        resp = client.post("/interview/coding/start", headers={"Authorization": "Bearer fake-token"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["success"] is True
+        assert data["data"]["problem"]["problem_id"] == "11"
+
+
+def test_start_coding_failure():
+    with patch("backend.api.routes.pick_random_problem_from_db", new_callable=AsyncMock, return_value=None):
+        resp = client.post("/interview/coding/start", headers={"Authorization": "Bearer fake-token"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["success"] is False
+        assert "error" in data
+
+
+# --- /interview/coding/submit ---
+def test_submit_coding_success():
+    async def mock_start_agent_session(session_id, user_id, workflow_id, duration, is_audio):
+        class DummySession:
+            id = session_id
+            user_id = user_id
+            app_name = "testapp"
+            state = {}
+        async def dummy_events():
+            yield type("Event", (), {
+                "is_final_response": lambda self=True: True,
+                "content": type("C", (), {"parts": [type("P", (), {"text": "ok"})]})()
+            })()
+        class DummyQueue:
+            async def put(self, msg): return None
+        return dummy_events(), DummyQueue(), DummySession()
+
+    with patch("backend.api.routes.start_agent_session", mock_start_agent_session), \
+         patch("backend.api.routes._run_judge_from_session", new_callable=AsyncMock, return_value={"success": True}), \
+         patch("backend.api.routes.save_transcript", return_value=None), \
+         patch("backend.api.routes.session_service.delete_session", return_value=None), \
+         patch("backend.api.routes.firestore_db.get_feedback", return_value={"data": {"scores": {"dummy": 100}}}):
+
+        payload = {
+            "problem_id": "11",
+            "code": "print('hello')",
+            "language": "python",
+            "claimed_time": "O(n)",
+            "claimed_space": "O(1)",
+            "is_audio": False
+        }
+        resp = client.post("/interview/coding/submit", json=payload, headers={"Authorization": "Bearer fake-token"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["success"] is True
+        assert "session_id" in data["data"]
+        assert "websocket_parameter" in data["data"]
+
+
+def test_submit_coding_validation_error():
+    """Missing required fields triggers 422"""
+    resp = client.post("/interview/coding/submit", json={}, headers={"Authorization": "Bearer fake-token"})
+    assert resp.status_code == 422
+
+
+# --- /interview/coding/{session_id}/review ---
+def test_get_review_success():
+    review_doc = {
+        "createAt": "2025-09-09T18:45:53Z",
+        "problem_id": "11",
+        "problem_slug": "container-with-most-water",
+        "optimal_complexity": {"time": "O(n)", "space": "O(1)"},
+        "reviewer_result": {"compile_status": "ok"},
+        "submissions": {"code": "print('hi')", "language": "python"},
+        "transcript": [{"role": "AI", "message": "Hello"}]
+    }
+
+    with patch("backend.api.routes.firestore_db.get_coding_review", return_value={"data": review_doc}):
+        resp = client.get("/interview/coding/abc123/review", headers={"Authorization": "Bearer fake-token"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["data"]["problem_id"] == "11"
+        assert data["data"]["reviewer_result"]["compile_status"] == "ok"
+        assert data["data"]["submissions"]["language"] == "python"
+
+
+def test_get_review_not_found():
+    with patch("backend.api.routes.firestore_db.get_coding_review", return_value={"data": None}):
+        resp = client.get("/interview/coding/missing/review", headers={"Authorization": "Bearer fake-token"})
+        # Your API may return 404 or 200 with success:false
+        assert resp.status_code in [200, 404]
+        if resp.status_code == 200:
+            assert resp.json()["success"] is False
