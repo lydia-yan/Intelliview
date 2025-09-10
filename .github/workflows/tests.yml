@@ -35,7 +35,14 @@ jobs:
         run: |
           cd backend
           export CI=true
-          echo '{}' > dummy.json
+          echo '{
+            "type": "service_account",
+            "project_id": "dummy",
+            "private_key_id": "dummy",
+            "private_key": "-----BEGIN PRIVATE KEY-----\nFAKE\n-----END PRIVATE KEY-----\n",
+            "client_email": "dummy@dummy.iam.gserviceaccount.com",
+            "client_id": "1234567890"
+          }' > dummy.json
           export GOOGLE_CLOUD_PROJECT=dummy
           export FIREBASE_KEY_PATH=$(pwd)/dummy.json
           export GOOGLE_CLOUD_LOCATION=us-central1
