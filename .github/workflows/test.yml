@@ -1,0 +1,50 @@
+name: Run all tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.10","3.11"]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache venv
+        uses: actions/cache@v4
+        with:
+          path: ~/.venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies
+        run: |
+          if [ ! -d ~/.venv ]; then
+            python -m venv ~/.venv
+          fi
+          source ~/.venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Run all tests
+        run: |
+          source ~/.venv/bin/activate
+          cd backend
+          export CI=true
+          export GOOGLE_CLOUD_PROJECT=dummy
+          pytest --maxfail=5 --disable-warnings -v --tb=short

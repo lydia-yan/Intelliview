@@ -1,7 +1,11 @@
-import pytest
+import pytest, os
 from backend.data import database
 from backend.data.schemas import Interview, Workflow, TranscriptTurn, Feedback, PersonalExperience, RecommendedQA, GeneralBQ, Profile
 from backend.data.tests.mock_data import personalExperience, recommendedQAs, transcript, feedback, generalBQ, profile_data
+
+# Skip all Firestore-dependent tests when running in CI
+if os.getenv("CI") == "true":
+    pytest.skip("Skipping Firestore-dependent tests in CI", allow_module_level=True)
 
 TEST_USER_ID = "test_user_123"
 # Cast URL/email fields to string so Pydantic doesn't use HttpUrl/EmailStr types
