@@ -127,20 +127,6 @@ coding_review = {
     "problem_slug": "two-sum",
     "scores": {
         "overall": 82.5,
-        "breakdown": {
-            "code": {
-                "correctness": 95.0,
-                "efficiency": 70.0,
-                "robustness": 60.0,
-                "style": 80.0,
-            },
-            "conversation": {
-                "understanding": 75.0,
-                "awareness": 40.0,
-                "defense": 65.0,
-                "clarity": 80.0,
-            },
-        },
         "code_score": {
             "correctness": 95.0,
             "efficiency": 70.0,
@@ -161,10 +147,9 @@ coding_review = {
     "feedback": {
         "strength": "🌟 Strongest area: Correctness (95.0).",
         "opportunity": "🎯 Biggest opportunity: Awareness (40.0).",
-       "feedback": {
-        "next_step": {
-            "text": "✅ Next step: Practice edge cases before coding."  # now it's a dict
-            }
+        "next_step": {   # required dict of lists
+            "practice": ["✅ Practice edge cases before coding."],
+            "review": ["📚 Review complexity trade-offs"]
         },
         "code": ["💻 Code feedback: - Time gap vs optimal"],
         "conversation": ["🗣️ Conversation feedback: - Missed large input edge case"],
