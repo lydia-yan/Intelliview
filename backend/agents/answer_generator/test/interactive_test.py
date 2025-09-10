@@ -9,10 +9,8 @@ import sys
 import json
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    os.getenv("CI") == "true",
-    reason="Skipping Firestore-dependent tests in CI"
-)
+if os.getenv("CI") == "true":
+    pytest.skip("Skipping Firestore-dependent tests in CI", allow_module_level=True)
 
 # Add project root directory to Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../")))
