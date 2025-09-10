@@ -343,8 +343,6 @@ def normalize_one(raw: Dict[str, Any], overrides: Dict[str, Any], start_id: Opti
             "constraints": constraints,
         },
         "hints": [clean_html_to_text(h or "") for h in hints_list],
-        "solutions": [],
-        "best_solution": None,
     }
 
     provided_code = {
@@ -354,48 +352,7 @@ def normalize_one(raw: Dict[str, Any], overrides: Dict[str, Any], start_id: Opti
     }
     any_code = any(bool(v) for v in provided_code.values())
     if any_code:
-        tc, sc = extract_complexities_from_solution_text(raw.get("solution", ""))
-        cleaned["solutions"].append(
-            {
-                "approach": "Provided Solution",
-                "time_complexity": tc,
-                "space_complexity": sc,
-                "code": {k: v for k, v in provided_code.items() if v},
-            }
-        )
-
-    slug = (raw.get("titleSlug") or "").lower()
-    title = raw.get("title") or ""
-    override = overrides.get(slug) if isinstance(overrides, dict) else None
-
-    best_solution_block: Optional[Dict[str, Any]] = None
-
-    if override and isinstance(override, dict) and "best_solution" in override:
-        bs = override["best_solution"]
-        best_solution_block = {
-            "approach": bs.get("approach"),
-            "time_complexity": bs.get("time_complexity"),
-            "space_complexity": bs.get("space_complexity"),
-            "code": {k: v for k, v in provided_code.items() if v} if any_code else {},
-        }
-    else:
-        if cleaned["solutions"] and cleaned["solutions"][0].get("time_complexity"):
-            best_solution_block = {
-                "approach": cleaned["solutions"][0]["approach"],
-                "time_complexity": cleaned["solutions"][0]["time_complexity"],
-                "space_complexity": cleaned["solutions"][0]["space_complexity"],
-                "code": cleaned["solutions"][0].get("code", {}),
-            }
-
-    cleaned["best_solution"] = best_solution_block
-
-    if best_solution_block:
-        already = any(
-            sol.get("approach") == best_solution_block["approach"]
-            for sol in cleaned["solutions"]
-        )
-        if not already:
-            cleaned["solutions"].append(best_solution_block)
+        cleaned["solutions"] = provided_code
 
     return cleaned
 
