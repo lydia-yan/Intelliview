@@ -16,6 +16,8 @@ if not GOOGLE_CLOUD_PROJECT:
     raise EnvironmentError("GOOGLE_CLOUD_PROJECT not set in .env")
 
 def load_firebase_key():
+    if os.getenv("CI") == "true" or (FIREBASE_KEY_PATH and "dummy.json" in FIREBASE_KEY_PATH):
+        return None  # return a fake value so imports don’t crash
     if FIREBASE_KEY_PATH:
         # Read from local file
         key_path = project_root / FIREBASE_KEY_PATH
