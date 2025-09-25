@@ -12,6 +12,7 @@ from google.genai.types import Content, Part, Blob
 import base64
 from backend.agents.interview_judge.agent import _run_judge_from_session
 from backend.coordinator.session_manager import session_service
+from backend.tools.speech_to_text import run_speech_to_text
 
 
 
@@ -48,6 +49,7 @@ async def start_agent_session(session_id, user_id, workflow_id, duration_minutes
         session_id=session_id,
     )
 
+    session.state["mode"] = is_audio
     session.state.setdefault("transcript", [])
     session.state["workflow_id"] = workflow_id
     # Set up session timer
@@ -86,7 +88,10 @@ async def start_agent_session(session_id, user_id, workflow_id, duration_minutes
         parts=[Part(text=message)]
     )
     live_request_queue.send_content(content=intro_content)
-    session.state["transcript"].append({"role": "AI", "message": message})
+    if not is_audio:
+        session.state["transcript"].append({"role": "AI", "message": message})
+    else:
+        session.state["transcript"].append({"role": "AI", "message": message, "note": "[audio intro requested]"})
 
     return live_events, live_request_queue, session
 
@@ -95,7 +100,8 @@ async def agent_to_client_messaging(websocket, live_events, session):
     if not session:
         print(f"[ERROR] Session {session.id} not found")
     try:
-        response_buffer = [] # Buffer to collect text parts
+        response_buffer = []  # Collect partial text
+        audio_buffer = None   # Collect audio data per turn
         while True:
             if is_session_expired(session):
                 print(f"[SESSION ENDED] Session {session.id} expired (agent)")
@@ -140,10 +146,15 @@ async def agent_to_client_messaging(websocket, live_events, session):
                     print(f"[AGENT TO CLIENT]: {message}")
                     
                     # Store full response in transcript when complete, if not already stored
-                    if event.turn_complete and response_buffer:
-                        full_response =response_buffer[-1].strip()
-                        session.state["transcript"].append({"role": "AI", "message": full_response})
+                    if event.turn_complete and (response_buffer or audio_buffer):
+                        entry = {"role": "AI"}
+                        if response_buffer:
+                            entry["message"] = response_buffer[-1].strip()
+                        if audio_buffer:
+                            entry["message"] = audio_buffer
+                        session.state["transcript"].append(entry)
                     response_buffer.clear()  # Clear buffer
+                    audio_buffer = None
                     continue
 
                 # Read the Content and its first Part
@@ -157,13 +168,14 @@ async def agent_to_client_messaging(websocket, live_events, session):
                 if part.inline_data and part.inline_data.mime_type.startswith("audio/pcm"):
                     audio_data = part.inline_data.data
                     if audio_data:
+                        b64_audio = base64.b64encode(audio_data).decode("ascii")
                         message = {
                             "mime_type": "audio/pcm",
-                            "data": base64.b64encode(audio_data).decode("ascii")
+                            "data": b64_audio,
                         }
                         await websocket.send_text(json.dumps(message))
                         print(f"[AGENT TO CLIENT]: audio/pcm: {len(audio_data)} bytes.")
-                        session.state["transcript"].append({"role": "AI", "message": "[audio response sent]"})
+                        audio_buffer = audio_data
                     continue
 
                 # Handle partial text response
@@ -230,7 +242,7 @@ async def client_to_agent_messaging(websocket, live_request_queue, session):
                 print(f"[CLIENT TO AGENT]: {data}")
 
                 # Record user message in session transcript
-                session.state["transcript"].append({"role": "user", "message": data})
+                session.state["transcript"].append({"role": "user", "message": data.strip()})
 
             elif mime_type == "audio/pcm":
                 # Decode audio and send to agent
@@ -239,7 +251,7 @@ async def client_to_agent_messaging(websocket, live_request_queue, session):
                 print(f"[CLIENT TO AGENT]: [audio data] {len(decoded_data)} bytes")
 
                 # Record audio event in transcript
-                session.state["transcript"].append({"role": "user", "message": "[audio message]"})
+                session.state["transcript"].append({"role": "user", "message": decoded_data})
             else:
                 raise ValueError(f"Mime type not supported: {mime_type}")
     except Exception as e:
@@ -261,10 +273,17 @@ def save_transcript(session):
 
     transcript = session.state.get("transcript", [])
     workflowId= session.state.get("workflow_id")
+    mode = session.state.get("mode")
+
+    final_transcript = []
+    if mode == "TEXT":
+        final_transcript = transcript
+    else:
+        final_transcript = transcript[0] + normalize_transcript(transcript[1:])
 
 
     interview_data = Interview(
-        transcript=transcript,  
+        transcript=final_transcript,  
         duration_minutes=session.state.get("duration")
     )
 
@@ -274,3 +293,27 @@ def save_transcript(session):
         workflow_id=workflowId,
         interview_data=interview_data
     )
+
+def normalize_transcript(transcript):
+    normalized_transcript = []
+    for idx, entry in enumerate(transcript):
+        # Ensure entry always has role
+        role = entry.get("role")
+        msg = entry.get("message")
+        if idx == 0:
+            normalized_transcript.append({"role": role, "text": msg})
+            continue
+        try:
+            # 🔑 Call your STT / speech-to-text model here
+            # For now, just mark as placeholder
+            transcribed_text = run_speech_to_text(msg)
+        except Exception as e:
+            print(f"[WARN] Failed to transcribe audio for transcript: {e}")
+            transcribed_text = "[untranscribed audio]"
+
+        normalized_transcript.append({
+            "role": role,
+            "message": transcribed_text
+        })
+    return normalize_transcript
+
