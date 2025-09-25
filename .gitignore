@@ -14,7 +14,9 @@ __pycache__/
 credentials/
 .tokens/*.json
 
-
 # leetcode data files
 backend/scripts/leetcode_problems.json
 backend/scripts/cleaned.json
+
+# model path
+models/
