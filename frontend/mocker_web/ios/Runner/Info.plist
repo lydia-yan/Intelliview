@@ -56,5 +56,9 @@
 			</array>
 		</dict>
 	</array>
+	
+	<!-- Microphone permission for voice recording -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to microphone to record voice interviews.</string>
 </dict>
 </plist>
