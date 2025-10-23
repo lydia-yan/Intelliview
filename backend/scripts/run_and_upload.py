@@ -36,9 +36,11 @@ def main():
     first_n = 1000   # set an int if you want to limit, e.g. 10
     overrides = None # or path to overrides.json
     start_id = 1
+
+    # print(firestore_db.delete_coding_problems())  #clean up the old data in firebase
     # normalize_file(input_file, output_file, first_n, start_id, overrides)
     # print(upload_to_firestore(output_file))
-    cleanup_file([output_file, input_file])
+    # cleanup_file([output_file, input_file])
 
 
 

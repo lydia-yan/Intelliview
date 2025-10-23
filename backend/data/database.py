@@ -5,7 +5,7 @@ from firebase_admin import firestore
 
 from backend.data.schemas import (
     Profile, Interview, Workflow, Feedback,
-    PersonalExperience, RecommendedQA, GeneralBQ, CodingProblems
+    PersonalExperience, RecommendedQA, GeneralBQ, CodingProblems, CodingReview, CodeSubmission
 )
 from backend.tools.firebase_config import db
 
@@ -308,7 +308,7 @@ class FirestoreDB:
             batch = self.db.batch()
             for p in problems[start:start + BATCH_SIZE]:
                 doc_id = str(p.id)  # ensure string
-                data = p.model_dump(exclude={"id"})
+                data = p.model_dump() #include id
                 batch.set(col.document(doc_id), data, merge=True)  # merge=False to overwrite
                 written += 1
             batch.commit()
@@ -345,6 +345,79 @@ class FirestoreDB:
 
         return {
             "message": f"Deleted {deleted_count} coding problems from 'problems' collection successfully",
+            "data": None
+        }
+    
+
+    # --- Code Submission --
+    def save_code_submission(self, user_id: str, session_id: str, problem_id: str, submission: CodeSubmission):
+    # store under users/{uid}/coding_submissions/{session_id}
+        doc_ref = self.db.collection('users').document(user_id).collection('coding_interviews').document(session_id)
+        submission.createAt = datetime.now(timezone.utc)
+        doc_ref.set(
+                {   
+                    "problem_id": problem_id,
+                    "submissions": submission.model_dump()
+                },
+                merge=True
+            )
+    
+        return {
+            "message": f"Coding submission set for session {session_id} successfully",
+            "data": None
+        }
+
+    def get_code_submission(self, user_id: str, session_id: str):
+        doc_ref = self.db.collection('users').document(user_id).collection('coding_interviews').document(session_id)
+        doc = doc_ref.get()
+        if doc.exists:
+            data = doc.to_dict()
+            submission = data.get("submissions", {}) or {}
+            return {
+                "message": f"Coding Submission retrieved for session {session_id} successfully",
+                "data": {
+                    "problem_id": data.get("problem_id"),
+                    **submission
+                }
+            }
+        else:
+            return {
+                "message": f"Coding Submission for {session_id} not found for user {user_id}",
+                "data": None
+            }
+    
+    # --- Coding Reviews Operations ---
+    def set_coding_review(self, user_id: str, session_id: str, review_data: CodingReview) -> Dict[str, str]:
+        doc_ref = self.db.collection('users').document(user_id).collection('coding_interviews').document(session_id)
+        review_data.createAt = datetime.now(timezone.utc)
+        doc_ref.set(review_data.model_dump(), merge = True)
+        return {
+            "message": f"Coding review set for interview {session_id} successfully",
+            "data": None
+        }
+    
+    def get_coding_review(self, user_id: str, session_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve coding review of an interview."""
+        doc_ref = self.db.collection('users').document(user_id).collection('coding_interviews').document(session_id)
+        doc = doc_ref.get()
+        if doc.exists:
+            return {
+                "message": f"Coding Review retrieved for session {session_id} successfully",
+                "data": doc.to_dict()
+            }
+        else:
+            return {
+                "message": f"Coding Review for {session_id} not found for user {user_id}",
+                "data": None
+            }
+
+    
+    def delete_coding_review(self, user_id: str, session_id: str) -> Dict[str, str]:
+        """Delete a workflow record."""
+        doc_ref = self.db.collection('users').document(user_id).collection('coding_interviews').document(session_id)
+        doc_ref.delete()
+        return {
+            "message": f"Coding review {session_id} for user {user_id} deleted successfully",
             "data": None
         }
     

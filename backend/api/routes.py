@@ -7,12 +7,14 @@ from backend.data.database import firestore_db
 from backend.data.schemas import Profile
 from backend.agents.interviewer.agent import start_agent_session, client_to_agent_messaging, agent_to_client_messaging, save_transcript
 from backend.tools.connection_manager import manager
-from backend.api.schemas import InterviewStartRequest
+from backend.api.schemas import InterviewStartRequest, CodingSubmitRequest
 import asyncio
 from datetime import datetime, timezone
 from backend.coordinator.preparation_workflow import generate_session_id
 from backend.agents.interview_judge.agent import _run_judge_from_session
 from backend.coordinator.session_manager import session_service
+from backend.api.tools import pick_random_problem_from_db
+from backend.data.schemas import CodeSubmission
 
 # PDF processing imports
 from backend.config import PDFConfig
@@ -122,19 +124,20 @@ async def websocket_endpoint(
     websocket: WebSocket, 
     session_id: str,
     user_id: str = Query(...),
-    workflow_id: str = Query(...),
-    duration: int = Query(10), #change the default duration here
-    is_audio: bool = Query(False)
+    duration: int = Query(...),
+    is_audio: bool = Query(...),
+    mode: str = Query("general"),
+    workflow_id: Optional[str] = Query(None),
 ):    
     """Client WebSocket endpoint to interact with real-time interview agent."""
 
     # Wait for client connection
     await manager.connect(websocket)
-    print(f"Client #{session_id} connected, audio mode: {is_audio}")
+    print(f"Client #{session_id} connected, mode={mode}, audio={is_audio}")
 
     try: 
         # Start agent session
-        live_events, live_request_queue, session = await start_agent_session(session_id, user_id, workflow_id, duration, is_audio)
+        live_events, live_request_queue, session = await start_agent_session(session_id, user_id, duration, is_audio, mode, workflow_id)
 
         # Start tasks
         agent_to_client_task = asyncio.create_task(
@@ -185,12 +188,13 @@ async def websocket_endpoint(
 async def start_interview(request: InterviewStartRequest, user=Depends(verify_token)):
     session_id = generate_session_id()
 
-    # You might want to store this session info in the database here
-
     # Format WebSocket parameters
+    # Set the duration to default 15 min if not passing duration
     websocket_parameter = (
-        f"?user_id={user['uid']}&workflow_id={request.workflow_id}"
-        f"&duration={request.duration}&is_audio={str(request.is_audio).lower()}"
+        f"?user_id={user['uid']}"
+        f"&workflow_id={request.workflow_id}"
+        f"&duration={request.duration if request.duration else 15}&is_audio={str(request.is_audio).lower()}"
+        f"&mode=general"
     )
 
     return {
@@ -381,3 +385,63 @@ async def start_workflow_with_text(
     except Exception as e:
         processing_time = time.time() - start_time
         raise HTTPException(status_code=500, detail=f"Workflow execution failed: {str(e)}")
+
+@router.post("/interview/coding/start")
+async def start_coding(user=Depends(verify_token)):
+    meta = await pick_random_problem_from_db(user["uid"])
+    if not meta:
+        return {
+                "success": False,
+                "error": "Cannot get coding problems data",
+            }
+
+    return {
+        "success": True,
+        "data": {
+            "problem": meta #include the problem id
+        }
+    }
+
+@router.post("/interview/coding/submit")
+async def submit_coding_solution(request: CodingSubmitRequest, user=Depends(verify_token)):
+    session_id = generate_session_id()
+    
+    duration = 5 # Default duration set to 5 minutes
+
+    # save submission that can fetch later in agent
+    submission = CodeSubmission(
+        code=request.code,
+        language=request.language,
+        claimed_time=request.claimed_time,
+        claimed_space=request.claimed_space,
+    )
+    firestore_db.save_code_submission(
+        user['uid'], session_id, request.problem_id, submission
+    )
+
+    # (Optionally trigger agent session here)
+    # await start_agent_session(...)
+
+    websocket_parameter = (
+        f"?user_id={user['uid']}"
+        f"&mode=coding"
+        f"&duration={duration}&is_audio={str(request.is_audio).lower()}"
+    )
+
+    return {
+        "success": True,
+        "data": {"session_id": session_id, "websocket_parameter": websocket_parameter}
+        }
+
+@router.get("/interview/coding/{session_id}/review")
+async def get_coding_review(session_id: str, user=Depends(verify_token)):
+    review_result = firestore_db.get_coding_review(user["uid"], session_id)
+    if not review_result or not review_result["data"]:
+        return {
+            "success": False, 
+            "error": review_result.get("message", "No review found")
+        }
+    return {
+        "success": review_result["data"] is not None,
+        "data": review_result["data"]
+    }

@@ -1,7 +1,7 @@
 import pytest, os
 from backend.data import database
-from backend.data.schemas import Interview, Workflow, TranscriptTurn, Feedback, PersonalExperience, RecommendedQA, GeneralBQ, Profile
-from backend.data.tests.mock_data import personalExperience, recommendedQAs, transcript, feedback, generalBQ, profile_data
+from backend.data.schemas import Interview, Workflow, TranscriptTurn, Feedback, PersonalExperience, RecommendedQA, GeneralBQ, Profile, CodingReview, CodeSubmission
+from backend.data.tests.mock_data import personalExperience, recommendedQAs, transcript, feedback, generalBQ, profile_data, coding_review, coding_submission
 
 # Skip all Firestore-dependent tests when running in CI
 if os.getenv("CI") == "true":
@@ -55,13 +55,18 @@ def setup_workflow_and_interview():
     result = database.firestore_db.set_feedback(TEST_USER_ID, workflow_session_id, interview_session_id, feedback_obj)
     assert "Feedback set" in result["message"]
 
+    coding_interview_session_id = "coding_interview_session"
+    review_data = CodingReview(**coding_review)
+    review_result = database.firestore_db.set_coding_review(TEST_USER_ID, coding_interview_session_id, review_data)
+    assert "successfully" in review_result["message"]
 
-    return TEST_USER_ID, workflow_session_id, interview_session_id
+
+    return TEST_USER_ID, workflow_session_id, interview_session_id, coding_interview_session_id
 
 # ------------------ Test Personal Experience ------------------
 
 def test_set_personal_experience(setup_workflow_and_interview):
-    user_id, workflow_id, _ = setup_workflow_and_interview
+    user_id, workflow_id, _, _ = setup_workflow_and_interview
     workflow_title = personalExperience["title"]
     retrieved = database.firestore_db.get_personal_experience(user_id, workflow_id)
     assert retrieved is not None
@@ -71,7 +76,7 @@ def test_set_personal_experience(setup_workflow_and_interview):
 # ------------------ Test Recommended QAs ------------------
 
 def test_set_recommended_qas(setup_workflow_and_interview):
-    user_id, workflow_id, _ = setup_workflow_and_interview
+    user_id, workflow_id, _, _ = setup_workflow_and_interview
     qas = [RecommendedQA(**qa) for qa in recommendedQAs]
 
     retrieved = database.firestore_db.get_recommended_qas(user_id, workflow_id)
@@ -81,7 +86,7 @@ def test_set_recommended_qas(setup_workflow_and_interview):
 
 # ------------------ Test Transcript ------------------
 def test_set_transcript(setup_workflow_and_interview):
-    user_id, workflow_id, interview_id = setup_workflow_and_interview
+    user_id, workflow_id, interview_id, _ = setup_workflow_and_interview
     turns = [TranscriptTurn(**t) for t in transcript]
 
     retrieved = database.firestore_db.get_transcript(user_id, workflow_id, interview_id)
@@ -92,7 +97,7 @@ def test_set_transcript(setup_workflow_and_interview):
 # ------------------ Test Feedback ------------------
 
 def test_set_feedback(setup_workflow_and_interview):
-    user_id, workflow_id, interview_id = setup_workflow_and_interview
+    user_id, workflow_id, interview_id, _ = setup_workflow_and_interview
     feedback_obj = Feedback(**feedback)
 
 
@@ -143,7 +148,7 @@ def test_update_profile():
 
 # ------------------ Test Get all workflows  ------------------
 def test_get_workflows_for_user(setup_workflow_and_interview):
-    user_id, workflow_id, _ = setup_workflow_and_interview
+    user_id, workflow_id, _, _ = setup_workflow_and_interview
     workflows = database.firestore_db.get_workflows_for_user(user_id)
     
     assert isinstance(workflows["data"], list)
@@ -152,7 +157,7 @@ def test_get_workflows_for_user(setup_workflow_and_interview):
 
 # ------------------ Test Get all interviews ------------------
 def test_get_interviews_for_workflow(setup_workflow_and_interview):
-    user_id, workflow_id, session_id = setup_workflow_and_interview
+    user_id, workflow_id, session_id, _ = setup_workflow_and_interview
     sessions = database.firestore_db.get_interviews_for_workflow(user_id, workflow_id)
 
     assert isinstance(sessions["data"], list)
@@ -174,3 +179,45 @@ def test_get_coding_problem_by_id_found():
     result = database.firestore_db.get_coding_problems(problem_id)
     assert "successfully" in result["message"]
     assert result["data"]["title"] == "Two Sum"
+
+# ------------------ Test Coding Submission ------------------
+def test_set_and_get_coding_submission(setup_workflow_and_interview):
+    user_id, _, _, session_id = setup_workflow_and_interview
+    problem_id = "p123"
+
+    submission_obj = CodeSubmission(**coding_submission)
+    res = database.firestore_db.save_code_submission(user_id, session_id, problem_id, submission_obj)
+    assert "successfully" in res["message"]
+
+    retrieved = database.firestore_db.get_code_submission(user_id, session_id)
+    assert retrieved["data"]["problem_id"] == problem_id
+    assert retrieved["data"]["language"] == coding_submission["language"]
+    assert "two_sum" in retrieved["data"]["code"]
+
+
+# ---- Test Coding Review Get and Delete ----
+def test_get_coding_review_hit(setup_workflow_and_interview):
+    user_id, _, _, session_id = setup_workflow_and_interview
+    retrieved = database.firestore_db.get_coding_review(user_id, session_id)
+    assert retrieved is not None
+    assert retrieved["data"]["problem_slug"] == coding_review["problem_slug"]
+    assert retrieved["data"]["scores"]["overall"] == coding_review["scores"]["overall"]
+
+
+def test_get_coding_review_miss(setup_workflow_and_interview):
+    user_id, _, _, _ = setup_workflow_and_interview
+    wrong_id = "wrong"
+    retrieved = database.firestore_db.get_coding_review(user_id, wrong_id)
+
+    assert retrieved is not None
+    assert retrieved["data"] is None
+
+
+def test_delete_coding_review(setup_workflow_and_interview):
+    user_id, _, _, session_id = setup_workflow_and_interview
+    res = database.firestore_db.delete_coding_review(user_id, session_id)
+    assert res is not None
+    assert "successfully" in res["message"]
+    retrieved = database.firestore_db.get_coding_review(user_id, session_id)
+    assert "not found" in retrieved["message"]
+    assert retrieved["data"] is None
