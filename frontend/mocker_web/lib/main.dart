@@ -28,6 +28,7 @@ class IntelliviewApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Intelliview interview preparation',
         theme: AppTheme.lightTheme,
+        debugShowCheckedModeBanner: false,
         home: const DashboardPage(),
       ),
     );
