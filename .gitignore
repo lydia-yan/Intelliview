@@ -18,3 +18,44 @@ credentials/
 # leetcode data files
 backend/scripts/leetcode_problems.json
 backend/scripts/cleaned.json
+
+# iOS/Xcode
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcarchive
+
+# iOS Provisioning Profiles (keep project.pbxproj but ignore profiles)
+*.mobileprovision
+*.cer
+*.p12
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+.pub-cache/
+.pub/
+
+# Android local config
+**/android/local.properties
+
+# iOS Pods
+frontend/mocker_web/ios/Pods/
+frontend/mocker_web/ios/.symlinks/
+frontend/mocker_web/ios/Flutter/Flutter.framework
+frontend/mocker_web/ios/Flutter/Flutter.podspec
+
+# Firebase - contains API keys (should not be public)
+**/GoogleService-Info.plist
+**/google-services.json
