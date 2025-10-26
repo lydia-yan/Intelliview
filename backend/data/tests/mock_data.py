@@ -115,3 +115,67 @@ generalBQ = [
         "tags": []
     }
 ]
+
+coding_submission = {
+    "code": "def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i",
+    "language": "python",
+    "claimed_time": "O(n)",
+    "claimed_space": "O(n)",
+}
+
+coding_submission = {
+    "code": "def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i",
+    "language": "python",
+    "claimed_time": "O(n)",
+    "claimed_space": "O(n)",
+}
+
+coding_review = {
+    "problem_slug": "two-sum",
+    "scores": {
+        "overall": 82.5,
+        "code_score": {
+            "correctness": 95.0,
+            "efficiency": 70.0,
+            "robustness": 60.0,
+            "style": 80.0,
+            "efficiency_breakdown": {
+                "claim_vs_actual": {"time": 80.0, "space": 100.0},
+                "actual_vs_optimal": {"time": 70.0, "space": 90.0},
+            },
+        },
+        "conversation_score": {
+            "understanding": 75.0,
+            "awareness": 40.0,
+            "defense": 65.0,
+            "clarity": 80.0,
+        },
+    },
+    "feedback": {
+        "strength": "🌟 Strongest area: Correctness (95.0).",
+        "opportunity": "🎯 Biggest opportunity: Awareness (40.0).",
+        "next_step": {   # required dict of lists
+            "practice": ["✅ Practice edge cases before coding."],
+            "review": ["📚 Review complexity trade-offs"]
+        },
+        "code": ["💻 Code feedback: - Time gap vs optimal"],
+        "conversation": ["🗣️ Conversation feedback: - Missed large input edge case"],
+    },
+    "reviewer_result": {
+        "compile_status": "ok",
+        "tests": [
+            {"name": "case1", "input": "[2,7,11,15], target=9", "expected": "[0,1]", "output": "[0,1]", "status": "pass"},
+            {"name": "case2", "input": "[3,2,4], target=6", "expected": "[1,2]", "output": "[1,2]", "status": "pass"},
+        ],
+    },
+    "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(n)",
+        "edge_keywords": ["empty input", "duplicates", "large input"],
+    },
+    "transcript": [
+        {"role": "user", "message": "My solution uses a hash map."},
+        {"role": "AI", "message": "Good. What's the time complexity?"},
+        {"role": "user", "message": "O(n)."},
+    ],
+}
