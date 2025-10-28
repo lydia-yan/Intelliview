@@ -86,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
                 scrollbars: false,
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                 child: _buildContent(authService, isMobile),
               ),
             ),
@@ -140,7 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                SizedBox(height: isMobile ? 24 : 32),
 
                 // Title
                 Text(
@@ -153,7 +153,7 @@ class _LoginPageState extends State<LoginPage> {
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 12),
+                SizedBox(height: isMobile ? 8 : 12),
 
                 Text(
                   'Sign in to access your interview preparation dashboard',
@@ -165,7 +165,7 @@ class _LoginPageState extends State<LoginPage> {
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 40),
+                SizedBox(height: isMobile ? 28 : 40),
 
                 // Google Sign In Button
                 SizedBox(
@@ -205,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                SizedBox(height: isMobile ? 24 : 32),
 
                 // Divider
                 Row(
@@ -226,7 +226,7 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
 
-                const SizedBox(height: 32),
+                SizedBox(height: isMobile ? 24 : 32),
 
                 // Email/Password Form
                 Form(
@@ -259,7 +259,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: isMobile ? 16 : 20),
 
                       // Password Field
                       TextFormField(
@@ -303,7 +303,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 12),
+                      SizedBox(height: isMobile ? 8 : 12),
 
                       // Forgot Password Link
                       Align(
@@ -323,7 +323,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 12),
+                      SizedBox(height: isMobile ? 8 : 12),
 
                       // Terms Agreement Checkbox
                       Row(
@@ -376,7 +376,7 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: isMobile ? 20 : 24),
 
                       // Sign In Button
                       SizedBox(
@@ -419,7 +419,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                SizedBox(height: isMobile ? 20 : 32),
 
                 // Sign Up Link
                 Row(
