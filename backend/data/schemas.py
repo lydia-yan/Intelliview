@@ -6,10 +6,10 @@ from typing import List, Dict, Optional, Any
 class Profile(BaseModel):
     name: str = None
     email: EmailStr = None
-    photoURL: HttpUrl = None
-    linkedinLink: HttpUrl = None
-    githubLink: HttpUrl = None
-    portfolioLink: HttpUrl = None
+    photoURL: Optional[str] = None  # Allow empty string or None, backend will set default avatar
+    linkedinLink: Optional[HttpUrl] = None  # Still validate URL format, but allow None
+    githubLink: Optional[HttpUrl] = None  # Still validate URL format, but allow None
+    portfolioLink: Optional[HttpUrl] = None  # Still validate URL format, but allow None
     additionalInfo: str = None
     createAt: datetime = None
 
