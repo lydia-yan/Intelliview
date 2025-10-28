@@ -354,6 +354,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 return TextButton.icon(
                   onPressed: () async {
                     await authService.signOut();
+                    if (context.mounted) {
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        '/login',
+                        (route) => false,
+                      );
+                    }
                   },
                   icon: Icon(Icons.logout, color: Colors.white, size: MediaQuery.of(context).size.width < 600 ? 18 : 20),
                   label: Text(

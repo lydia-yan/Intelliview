@@ -124,7 +124,10 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     final authService = Provider.of<AuthService>(context, listen: false);
     await authService.signOut();
     if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/login');
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/login',
+        (route) => false,
+      );
     }
   }
 
