@@ -23,11 +23,15 @@ class User {
     this.createAt,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
+  factory User.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      throw Exception('Cannot create User from null data');
+    }
+    
     return User(
       userId: json['userId'] ?? json['id'],
-      name: json['name'] as String,
-      email: json['email'] as String,
+      name: (json['name'] as String?) ?? '',
+      email: (json['email'] as String?) ?? '',
       photoURL: json['photoURL'] as String?,
       linkedinLink: json['linkedinLink'] as String?,
       githubLink: json['githubLink'] as String?,
