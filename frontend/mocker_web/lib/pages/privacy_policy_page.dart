@@ -141,7 +141,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 _buildSection(
                   '9. Contact Us',
                   'If you have any questions about this privacy policy or our data practices, please contact us at:\n\n'
-                      'Email: support@intelliview.app',
+                      'Email: intelliview3@gmail.com',
                   isMobile,
                 ),
 

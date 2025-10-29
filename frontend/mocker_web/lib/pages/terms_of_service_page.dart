@@ -191,7 +191,7 @@ class TermsOfServicePage extends StatelessWidget {
                 _buildSection(
                   '13. Contact Information',
                   'If you have any questions about these Terms of Service, please contact us at:\n\n'
-                      'Email: support@intelliview.app',
+                      'Email: intelliview3@gmail.com',
                   isMobile,
                 ),
 
