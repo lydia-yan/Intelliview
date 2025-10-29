@@ -36,30 +36,52 @@ pdf_processor = PDFProcessor(pdf_config)
 async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(bearer)):
     try:
         decoded_token = auth.verify_id_token(credentials.credentials)
+        uid = decoded_token["uid"]
+        
+        # Get full user info from Firebase to get displayName
+        try:
+            user_record = auth.get_user(uid)
+            name = user_record.display_name or ""
+            picture = user_record.photo_url or ""
+        except Exception as e:
+            print(f"Warning: Could not fetch user record: {e}")
+            # Fallback to token data
+            name = decoded_token.get("name", "")
+            picture = decoded_token.get("picture", "")
+        
         return {
-            "uid": decoded_token["uid"],  
+            "uid": uid,
             "email": decoded_token["email"], 
-            "name": decoded_token.get("name", ""),
-            "picture": decoded_token.get("picture", "")
+            "name": name,
+            "picture": picture
         }
-    except Exception:
+    except Exception as e:
+        print(f"Token verification failed: {e}")
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 @router.get("/")
 def public_route():
     return {"success": True, "data": None}
 
+# Default avatar URL for users without profile pictures
+DEFAULT_AVATAR_URL = "https://api.dicebear.com/7.x/avataaars/svg?seed=default"
+
 # auth route
 @router.post("/auth/init")
 def init_user_profile(user=Depends(verify_token)):
     existing = firestore_db.get_profile(user["uid"])
+    
+    # Set default avatar if picture is empty or None
+    photo_url = user.get("picture", "")
+    if not photo_url or photo_url.strip() == "":
+        photo_url = DEFAULT_AVATAR_URL
 
     # If new user, or want to update on every login
     if not existing["data"]:
         profile_data = Profile(
             name=user.get("name", ""),
             email=user.get("email", ""),
-            photoURL=user.get("picture", "")
+            photoURL=photo_url
         )
         firestore_db.create_or_update_profile(user["uid"], profile_data)
 
@@ -68,7 +90,7 @@ def init_user_profile(user=Depends(verify_token)):
         "data": {
             "name": user.get("name", ""), 
             "email": user.get("email", ""), # keep this 
-            "photoURL": user.get("picture", ""),
+            "photoURL": photo_url,
             "isNew": existing["data"] is None
         }
     }
@@ -77,6 +99,13 @@ def init_user_profile(user=Depends(verify_token)):
 @router.get("/user")
 def get_user_info(user=Depends(verify_token)): 
     profile_result = firestore_db.get_profile(user["uid"])
+    
+    # Set default avatar if photoURL is empty or None
+    if profile_result["data"]:
+        photo_url = profile_result["data"].get("photoURL", "")
+        if not photo_url or photo_url.strip() == "":
+            profile_result["data"]["photoURL"] = DEFAULT_AVATAR_URL
+    
     return {
         "success": True if profile_result["data"] else False,
         "data": profile_result["data"]

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/workflow.dart';
 import '../services/workflow_service.dart';
-import '../services/auth_service.dart';
 import '../widgets/navbar.dart';
-import '../widgets/login_prompt.dart';
 import 'interview_prepare_page.dart';
 import 'mock_interview_page.dart';
 import 'profile_page.dart';
@@ -54,21 +51,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthService>(
-      builder: (context, authService, child) {
-        // if not logged in, show login prompt
-        if (!authService.isLoggedIn) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF5F5F5),
-            body: LoginPrompt(authService: authService),
-          );
-        }
+    // Responsive layout
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isNarrow = screenWidth < 900;
 
-        // logged in, responsive layout
-        final screenWidth = MediaQuery.of(context).size.width;
-        final isNarrow = screenWidth < 900;
-
-        return Scaffold(
+    return Scaffold(
           body: isNarrow
               ? Column(
                   children: [
@@ -208,8 +195,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 )
               : null,
-        );
-      },
     );
   }
 }
@@ -316,12 +301,14 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
   // Initialize: all workflows default to 'In Progress'
   Future<void> _loadWorkflows() async {
     try {
+      if (!mounted) return;
       setState(() {
         _loading = true;
         _error = null;
       });
       final loadedWorkflows = await _workflowService.getWorkflows();
       final localStatus = await _loadStatusFromLocal();
+      if (!mounted) return;
       setState(() {
         workflows = loadedWorkflows;
         _loading = false;
@@ -331,6 +318,7 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
         };
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;

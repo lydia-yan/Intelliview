@@ -145,6 +145,221 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  // Email/Password sign up
+  Future<bool> signUpWithEmail(String email, String password, String displayName) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      // Create user with email and password
+      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      _user = userCredential.user;
+
+      // Update display name
+      if (_user != null) {
+        await _user!.updateDisplayName(displayName);
+        await _user!.reload();
+        _user = _auth.currentUser;
+        
+        // Send email verification
+        await _user!.sendEmailVerification();
+        
+        if (kDebugMode) {
+          print('Email sign up successful: ${_user?.email}');
+          print('Verification email sent');
+        }
+      }
+
+      _setLoading(false);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Registration failed';
+      
+      switch (e.code) {
+        case 'email-already-in-use':
+          errorMessage = 'This email is already registered';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email address';
+          break;
+        case 'weak-password':
+          errorMessage = 'Password is too weak';
+          break;
+        case 'operation-not-allowed':
+          errorMessage = 'Email/password sign up is not enabled';
+          break;
+        default:
+          errorMessage = 'Registration failed: ${e.message}';
+      }
+      
+      _setError(errorMessage);
+      _setLoading(false);
+      if (kDebugMode) {
+        print('Email sign up error: $e');
+      }
+      return false;
+    } catch (e) {
+      _setError('Registration failed: ${e.toString()}');
+      _setLoading(false);
+      if (kDebugMode) {
+        print('Email sign up error: $e');
+      }
+      return false;
+    }
+  }
+
+  // Email/Password sign in
+  Future<bool> signInWithEmail(String email, String password) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      _user = userCredential.user;
+      _setLoading(false);
+
+      if (kDebugMode) {
+        print('Email sign in successful: ${_user?.email}');
+      }
+
+      return true;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Login failed';
+      
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No account found with this email';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email address';
+          break;
+        case 'user-disabled':
+          errorMessage = 'This account has been disabled';
+          break;
+        case 'invalid-credential':
+          errorMessage = 'Invalid email or password';
+          break;
+        default:
+          errorMessage = 'Login failed: ${e.message}';
+      }
+      
+      _setError(errorMessage);
+      _setLoading(false);
+      if (kDebugMode) {
+        print('Email sign in error: $e');
+      }
+      return false;
+    } catch (e) {
+      _setError('Login failed: ${e.toString()}');
+      _setLoading(false);
+      if (kDebugMode) {
+        print('Email sign in error: $e');
+      }
+      return false;
+    }
+  }
+
+  // Send email verification
+  Future<bool> sendEmailVerification() async {
+    try {
+      if (_user != null && !_user!.emailVerified) {
+        await _user!.sendEmailVerification();
+        if (kDebugMode) {
+          print('Verification email sent to ${_user?.email}');
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _setError('Failed to send verification email: ${e.toString()}');
+      if (kDebugMode) {
+        print('Send verification email error: $e');
+      }
+      return false;
+    }
+  }
+
+  // Check if email is verified
+  Future<bool> checkEmailVerified() async {
+    try {
+      await _user?.reload();
+      _user = _auth.currentUser;
+      notifyListeners();
+      return _user?.emailVerified ?? false;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Check email verified error: $e');
+      }
+      return false;
+    }
+  }
+
+  // Send password reset email
+  Future<bool> sendPasswordResetEmail(String email) async {
+    try {
+      _setLoading(true);
+      _clearError();
+      
+      await _auth.sendPasswordResetEmail(email: email);
+      
+      _setLoading(false);
+      if (kDebugMode) {
+        print('Password reset email sent to $email');
+      }
+      return true;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Failed to send reset email';
+      
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No account found with this email';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email address';
+          break;
+        default:
+          errorMessage = 'Failed to send reset email: ${e.message}';
+      }
+      
+      _setError(errorMessage);
+      _setLoading(false);
+      if (kDebugMode) {
+        print('Password reset error: $e');
+      }
+      return false;
+    } catch (e) {
+      _setError('Failed to send reset email: ${e.toString()}');
+      _setLoading(false);
+      if (kDebugMode) {
+        print('Password reset error: $e');
+      }
+      return false;
+    }
+  }
+
+  // Get email verification status
+  bool get isEmailVerified => _user?.emailVerified ?? false;
+
+  // Check if user needs email verification (signed up with email but not verified)
+  bool get needsEmailVerification {
+    if (_user == null) return false;
+    // Check if user signed up with email/password (not Google)
+    final providerData = _user!.providerData;
+    final hasEmailProvider = providerData.any((info) => info.providerId == 'password');
+    return hasEmailProvider && !_user!.emailVerified;
+  }
+
   // sign out
   Future<void> signOut() async {
     try {
