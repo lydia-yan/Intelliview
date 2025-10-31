@@ -560,7 +560,7 @@ class _MockInterviewPageState extends State<MockInterviewPage> {
                             crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 3,
                             mainAxisSpacing: 20,
                             crossAxisSpacing: 20,
-                            childAspectRatio: MediaQuery.of(context).size.width < 600 ? 2.5 : 1.3,
+                            childAspectRatio: MediaQuery.of(context).size.width < 600 ? 2.5 : 1.1,
                           ),
                           itemCount: _availableWorkflows.length,
                           itemBuilder: (context, index) {
@@ -1763,7 +1763,8 @@ class _WorkflowCard extends StatelessWidget {
               padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [

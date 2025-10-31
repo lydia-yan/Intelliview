@@ -456,10 +456,12 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                         child: GridView.builder(
                           padding: const EdgeInsets.only(bottom: 24),
                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 3,
+                            crossAxisCount: MediaQuery.of(context).size.width < 600
+                                ? 1
+                                : (MediaQuery.of(context).size.width < 1000 ? 2 : 3),
                             mainAxisSpacing: 20,
                             crossAxisSpacing: 20,
-                            childAspectRatio: MediaQuery.of(context).size.width < 600 ? 3.5 : 2.4,
+                            childAspectRatio: MediaQuery.of(context).size.width < 600 ? 3.5 : 1.8,
                           ),
                           itemCount: workflows.length,
                           itemBuilder: (context, idx) {
@@ -481,28 +483,33 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                                   ],
                                 ),
                                 child: Padding(
-                                  padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 20),
+                                  padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 14),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
                                         workflow.position, 
                                         style: TextStyle(
-                                          fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16, 
+                                          fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 15, 
                                           fontWeight: FontWeight.w600,
                                           color: AppTheme.darkGray,
-                                        )
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      SizedBox(height: MediaQuery.of(context).size.width < 600 ? 4 : 6),
+                                      SizedBox(height: MediaQuery.of(context).size.width < 600 ? 4 : 5),
                                       Text(
                                         workflow.company, 
                                         style: TextStyle(
-                                          fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14, 
+                                          fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 13, 
                                           color: AppTheme.mediumGray
-                                        )
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      SizedBox(height: MediaQuery.of(context).size.width < 600 ? 8 : 12),
+                                      SizedBox(height: MediaQuery.of(context).size.width < 600 ? 8 : 8),
                                       Container(
                                         padding: EdgeInsets.symmetric(
                                           horizontal: MediaQuery.of(context).size.width < 600 ? 8 : 10, 
@@ -521,7 +528,7 @@ class _WorkbenchPageState extends State<_WorkbenchPage> {
                                               ? AppTheme.mediumGray 
                                               : AppTheme.primaryBlue,
                                             fontWeight: FontWeight.w500,
-                                            fontSize: MediaQuery.of(context).size.width < 600 ? 10 : 12,
+                                            fontSize: MediaQuery.of(context).size.width < 600 ? 10 : 11,
                                           ),
                                         ),
                                       ),
