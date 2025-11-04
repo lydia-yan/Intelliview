@@ -401,6 +401,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       context: context,
                       builder: (BuildContext dialogContext) {
                         return AlertDialog(
+                          backgroundColor: Colors.white,
                           title: const Text(
                             'Delete Account',
                             style: TextStyle(
