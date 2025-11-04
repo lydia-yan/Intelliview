@@ -45,6 +45,7 @@ dependencies:
   http: ^1.5.0
   http_parser: ^4.0.2
   shared_preferences: ^2.3.3
+  cloud_firestore: ^6.0.0
 
 dev_dependencies:
   flutter_test:
