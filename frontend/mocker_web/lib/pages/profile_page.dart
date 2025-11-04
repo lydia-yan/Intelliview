@@ -386,6 +386,102 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ),
+
+        // Delete Account button (Danger Zone)
+        const SizedBox(height: 24),
+        Center(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width < 600 ? 180 : 200,
+            child: Consumer<AuthService>(
+              builder: (context, authService, child) {
+                return TextButton.icon(
+                  onPressed: () async {
+                    // Show confirmation dialog
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext dialogContext) {
+                        return AlertDialog(
+                          backgroundColor: Colors.white,
+                          title: const Text(
+                            'Delete Account',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                          content: const Text(
+                            'Are you sure you want to delete your account?\n\n'
+                            'This will permanently delete:\n'
+                            '• Your profile\n'
+                            '• All workflows\n'
+                            '• All interview records\n'
+                            '• All feedback data\n\n'
+                            'This action cannot be undone.',
+                            style: TextStyle(height: 1.5),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(dialogContext).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(dialogContext).pop(true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                              child: const Text('Delete Account'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                    if (confirmed == true) {
+                      final success = await authService.deleteAccount();
+                      if (success && context.mounted) {
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          '/login',
+                          (route) => false,
+                        );
+                      } else if (authService.error != null && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(authService.error!),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: Icon(
+                    Icons.delete_forever,
+                    color: Colors.red,
+                    size: MediaQuery.of(context).size.width < 600 ? 18 : 20,
+                  ),
+                  label: Text(
+                    'Delete Account',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      vertical: MediaQuery.of(context).size.width < 600 ? 10 : 12,
+                      horizontal: MediaQuery.of(context).size.width < 600 ? 16 : 20,
+                    ),
+                    backgroundColor: Colors.red.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.red.withOpacity(0.3)),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
       ],
     );
   }

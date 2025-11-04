@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../config/api_config.dart';
 import '../data/mock_data.dart';
 
@@ -382,6 +383,101 @@ class AuthService extends ChangeNotifier {
       if (kDebugMode) {
         print('sign out error: $e');
       }
+    }
+  }
+
+  // Delete user account and all data
+  Future<bool> deleteAccount() async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      if (_user == null) {
+        _setError('No user logged in');
+        _setLoading(false);
+        return false;
+      }
+
+      final userId = _user!.uid;
+
+      // Step 1: Delete all Firestore data
+      await _deleteUserFirestoreData(userId);
+
+      // Step 2: Delete Firebase Authentication account
+      await _user!.delete();
+
+      _user = null;
+      _userProfile = null;
+      _setLoading(false);
+
+      if (kDebugMode) {
+        print('Account deleted successfully');
+      }
+
+      return true;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Failed to delete account';
+      
+      if (e.code == 'requires-recent-login') {
+        errorMessage = 'For security, please sign out and sign in again before deleting your account.';
+      }
+      
+      _setError(errorMessage);
+      _setLoading(false);
+      if (kDebugMode) {
+        print('Delete account error: $e');
+      }
+      return false;
+    } catch (e) {
+      _setError('Failed to delete account: ${e.toString()}');
+      _setLoading(false);
+      if (kDebugMode) {
+        print('Delete account error: $e');
+      }
+      return false;
+    }
+  }
+
+  // Helper method to delete all user data from Firestore
+  Future<void> _deleteUserFirestoreData(String userId) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      
+      // Delete workflows collection and its subcollections
+      final workflowsRef = firestore.collection('users').doc(userId).collection('workflows');
+      final workflowSnapshots = await workflowsRef.get();
+      
+      for (var doc in workflowSnapshots.docs) {
+        await doc.reference.delete();
+      }
+      
+      // Delete interviews collection and its subcollections
+      final interviewsRef = firestore.collection('users').doc(userId).collection('interviews');
+      final interviewSnapshots = await interviewsRef.get();
+      
+      for (var interviewDoc in interviewSnapshots.docs) {
+        // Delete sessions subcollection
+        final sessionsRef = interviewDoc.reference.collection('sessions');
+        final sessionSnapshots = await sessionsRef.get();
+        
+        for (var sessionDoc in sessionSnapshots.docs) {
+          await sessionDoc.reference.delete();
+        }
+        
+        await interviewDoc.reference.delete();
+      }
+      
+      // Delete user document (profile)
+      await firestore.collection('users').doc(userId).delete();
+      
+      if (kDebugMode) {
+        print('All Firestore data deleted for user: $userId');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error deleting Firestore data: $e');
+      }
+      // Continue with account deletion even if Firestore cleanup fails
     }
   }
 
