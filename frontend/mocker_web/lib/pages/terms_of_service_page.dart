@@ -133,12 +133,8 @@ class TermsOfServicePage extends StatelessWidget {
                 ),
 
                 _buildSection(
-                  '7. Payment and Subscription',
-                  'Certain features may require payment. By purchasing a subscription or paid features:\n\n'
-                      '• You agree to pay all fees associated with your purchase\n'
-                      '• Payments are processed through secure third-party services\n'
-                      '• Subscriptions automatically renew unless cancelled\n'
-                      '• Refunds are subject to our refund policy',
+                  '7. Free Service',
+                  'Intelliview is currently a free service. All features and functionality are provided at no cost to users. We reserve the right to introduce paid features or subscriptions in the future, but will provide advance notice to users before implementing any charges.',
                   isMobile,
                 ),
 
@@ -168,7 +164,7 @@ class TermsOfServicePage extends StatelessWidget {
                       '• Any indirect, incidental, special, or consequential damages\n'
                       '• Loss of profits, data, or business opportunities\n'
                       '• Damages arising from your use or inability to use the Service\n\n'
-                      'Our total liability shall not exceed the amount paid by you for the Service in the past 12 months.',
+                      'As this is a free service, our liability is limited to the maximum extent permitted by law.',
                   isMobile,
                 ),
 
