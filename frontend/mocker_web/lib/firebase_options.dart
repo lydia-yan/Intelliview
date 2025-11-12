@@ -61,11 +61,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBhG43CePUtngWPlpyAsnfTyGwjOgNfZLE',
-    appId: '1:1022761324834:ios:e8732abaaedad37f92157b',
+    appId: '1:1022761324834:ios:543db0f6f486184292157b',
     messagingSenderId: '1022761324834',
     projectId: 'aiview-fa69f',
     storageBucket: 'aiview-fa69f.firebasestorage.app',
-    iosClientId: '1022761324834-rlsku4fhvh2uvdvv2rt99tb7dpam3mm0.apps.googleusercontent.com',
-    iosBundleId: 'com.example.mockerWeb',
+    iosClientId: '1022761324834-vv9160hvv1uvhhchggebkdqbe5347soa.apps.googleusercontent.com',
+    iosBundleId: 'com.jmy.intelliview',
   );
 }

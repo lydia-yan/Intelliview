@@ -62,6 +62,21 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _handleAppleLogin(AuthService authService) async {
+    if (!_agreedToTerms) {
+      _showError('Please agree to the Terms of Service and Privacy Policy');
+      return;
+    }
+
+    final success = await authService.signInWithApple();
+
+    if (success && mounted) {
+      Navigator.of(context).pushReplacementNamed('/dashboard');
+    } else if (authService.error != null && mounted) {
+      _showError(authService.error!);
+    }
+  }
+
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -186,6 +201,46 @@ class _LoginPageState extends State<LoginPage> {
                         : Icon(Icons.login, color: AppTheme.darkGray, size: 20),
                     label: Text(
                       authService.isLoading ? 'Signing in...' : 'Continue with Google',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.darkGray,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: AppTheme.borderGray, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: isMobile ? 16 : 20),
+
+                // Apple Sign In Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: authService.isLoading
+                        ? null
+                        : () => _handleAppleLogin(authService),
+                    icon: authService.isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.primaryBlue,
+                            ),
+                          )
+                        : Icon(Icons.apple, color: AppTheme.darkGray, size: 20),
+                    label: Text(
+                      authService.isLoading ? 'Signing in...' : 'Continue with Apple',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

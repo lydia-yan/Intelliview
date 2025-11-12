@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -141,6 +142,67 @@ class AuthService extends ChangeNotifier {
       _setLoading(false);
       if (kDebugMode) {
         print('Google sign in error: $e');
+      }
+      return false;
+    }
+  }
+
+  // Apple sign in
+  Future<bool> signInWithApple() async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      // Check if Apple Sign In is available
+      if (!await SignInWithApple.isAvailable()) {
+        _setError('Apple Sign In is not available on this device');
+        _setLoading(false);
+        return false;
+      }
+
+      // Request Apple ID credential
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // Create OAuth credential for Firebase
+      final oauthCredential = OAuthProvider("apple.com").credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      // Sign in to Firebase with Apple credential
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        oauthCredential,
+      );
+
+      _user = userCredential.user;
+
+      // Update display name if available from Apple and not already set
+      if (_user != null && appleCredential.givenName != null && appleCredential.familyName != null) {
+        final displayName = '${appleCredential.givenName} ${appleCredential.familyName}';
+        if (_user!.displayName == null || _user!.displayName!.isEmpty) {
+          await _user!.updateDisplayName(displayName);
+          await _user!.reload();
+          _user = _auth.currentUser;
+        }
+      }
+
+      _setLoading(false);
+
+      if (kDebugMode) {
+        print('Apple sign in successful: ${_user?.email}');
+      }
+
+      return true;
+    } catch (e) {
+      _setError('Apple sign in failed: ${e.toString()}');
+      _setLoading(false);
+      if (kDebugMode) {
+        print('Apple sign in error: $e');
       }
       return false;
     }
