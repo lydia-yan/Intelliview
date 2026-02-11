@@ -1,0 +1,1469 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: lydia-yan/intelliview
+    source: https://github.com/lydia-yan/intelliview
+    branch: main
+    commit: "28198d8f"
+    scope: [backend/agents/answer_generator/agent.py, backend/agents/answer_generator/prompt.py, backend/agents/interview_judge/agent.py,
+      backend/agents/interview_judge/prompt.py, backend/agents/interviewer/agent.py, backend/agents/interviewer/prompt.py,
+      backend/agents/question_generator/agent.py, backend/agents/question_generator/prompt.py, backend/agents/search/agent.py,
+      backend/agents/search/prompt.py, backend/agents/summarizer/agent.py, backend/agents/summarizer/prompt.py, backend/config.py,
+      backend/coordinator/preparation_workflow.py, backend/coordinator/session_manager.py, backend/data/database.py, backend/data/schemas.py,
+      backend/scripts/normalize.py, backend/services/github/__init__.py, backend/services/portfolio/portfolio_analyzer.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:45:50Z'
+    url: https://a2as.org/certified/agents/lydia-yan/intelliview
+  signatures:
+    digest: sha256:EdNUjeN0VeREO41vQoCXevBsH3DgyPJ9zli5oS0fC4A
+    key: ed25519:RTHKp3zr0RKzGYvhK8EqQwOxN3DhEguBcJ2DIs__pKE
+    sig: ed25519:2_FOmulpr9nDdX0qZxq0jBq89o40GQe7jMeOg7iECmeENS6ZsKe0-EqhQOc5Fcb7ELG5AUBMRmPlTYCcYG8tAg
+
+agents:
+  agent.0:
+    type: instance
+    models: [gemini-2.5-flash]
+    params:
+      function: start_agent_session
+      instance: agent
+  agent.1:
+    type: instance
+    models: [gemini-2.0-flash-live-preview-04-09]
+    params:
+      class: MockInterviewAgent
+      base: LlmAgent
+      name: MockInterviewAgent
+      description: Generates thoughtful follow-up interview questions based on user responses.
+      generate_content_config: types.GenerateContentConfig(temperature=0.3, max_output_tokens=300)
+      instance: agent
+  answer_generator_agent:
+    type: instance
+    models: [gemini-2.0-flash]
+    params:
+      name: answer_generator
+      description: Generate personalized interview answers using clear thinking
+      instruction: ['You are an expert interview coach and answer generator. Your task is to create personalized, compelling
+          interview answers based on the candidate''s background and the specific questions provided.', '**Personal Summary
+          from Summarizer Agent:**', '{personal_summary}', '**Questions to Answer from Question Generator Agent:**', '{questions_data}',
+        'GOAL: Generate personalized, high-quality interview answers for each question using the candidate''s background information
+          from the personal summary.', 'ANALYSIS OF CANDIDATE BACKGROUND:', 'Based on the personal summary above, analyze:',
+        '- Resume information and work experience', '- Technical skills and competencies', '- Educational background', '-
+          Additional interests and passions', '- Career goals and motivations', '- Specific achievements and projects', 'ANSWER
+          GENERATION APPROACH:', '1. **Technical Questions**: Use the candidate''s technical background and experience to
+          craft detailed, competent answers', '2. **Behavioral Questions**: Reference specific examples from the candidate''s
+          experience using the STAR method (Situation, Task, Action, Result)', '3. **Situational Questions**: Apply the candidate''s
+          problem-solving approach and technical knowledge to hypothetical scenarios', '4. **Company-Specific Questions**:
+          Connect the candidate''s background and interests to the target role and company', 'ANSWER QUALITY REQUIREMENTS:',
+        '- Each answer should be 80-120 words (concise but comprehensive)', '- Use specific examples from the candidate''s
+          background when possible', '- Follow the STAR method for behavioral questions', '- Demonstrate technical competency
+          for technical questions', '- Show genuine interest and cultural fit for company-specific questions', '- Sound natural
+          and conversational, not overly rehearsed', '- Include relevant details that showcase the candidate''s strengths',
+        'ANALYSIS FRAMEWORK:', '1. **Question Analysis**: Understand what the interviewer is really asking for', '2. **Background
+          Mapping**: Connect the candidate''s experience to the question', '3. **Clear Structure**: Organize answers logically
+          but naturally', '4. **Impact Focus**: Highlight achievements, learnings, and quantifiable results', 'ANSWER STRATEGIES
+          BY QUESTION TYPE:', '**BEHAVIORAL QUESTIONS**:', '- Structure thinking clearly with logical flow', '- Use STAR methodology
+          when it fits naturally, but don''t force it', '- Focus on specific examples from candidate''s experience', '- Show
+          what you did, how you thought about it, and what resulted', '**TECHNICAL QUESTIONS**:', '- Demonstrate deep understanding
+          of concepts', '- Reference your actual experience with technologies', '- Explain your thought process and decision-making
+          clearly', '- Show how you''ve applied these skills in real projects', '- Keep explanations concise but thorough',
+        '**SITUATIONAL QUESTIONS**:', '- Show analytical thinking and problem-solving approach', '- Reference similar situations
+          from your experience', '- Demonstrate understanding of best practices', '- Consider multiple perspectives and trade-offs',
+        '- Present your reasoning clearly', '**COMPANY-SPECIFIC QUESTIONS**:', '- Show genuine interest and alignment with
+          the role', '- Connect your experience to the specific context', '- Demonstrate understanding of the role requirements',
+        '- Show enthusiasm for the opportunity', 'CRITICAL INSTRUCTIONS:', '- Parse the questions_data from the previous agent
+          to get the list of questions to answer', '- For each question in the questions_data, generate a personalized answer
+          based on the personal_summary', '- Use the candidate''s background from personal_summary to make answers authentic
+          and specific', '- Include the original question along with your generated answer for each item', 'REQUIRED OUTPUT
+          FORMAT:', 'You must output a JSON array EXACTLY matching this structure WITHOUT any markdown formatting or code
+          blocks:', '[', '{', '"question": "The original interview question",', '"answer": "Your generated personalized answer
+          (80-120 words)",', '"tags": ["QuestionType", "Topic1", "Topic2", "Topic3", "Topic4"]', '}', ']', 'IMPORTANT FORMATTING
+          INSTRUCTIONS:', '- Do NOT wrap the JSON in markdown code blocks (do not use ```json or ``` tags)', '- Return ONLY
+          the raw JSON array without any other text before or after', '- Ensure all JSON property names and values are correctly
+          formatted with proper quotes', '- Make sure the JSON is valid and complete', '- Each answer should be personalized
+          based on the candidate''s background', '- Keep the same tags as provided in the questions_data but ensure question
+          type is first tag', 'EXAMPLE OF GOOD OUTPUT:', '[', '{', '"question": "Tell me about a time when you had to optimize
+          database performance under pressure.",', '}', ']', 'ANSWER QUALITY CHECKLIST:', ✓ Uses specific examples from candidate's
+          actual experience, ✓ Includes quantifiable results and metrics, ✓ Demonstrates relevant technical and soft skills,
+        ✓ Shows problem-solving and analytical thinking, '✓ Has clear, logical structure', '✓ Shows growth, learning, and
+          impact', ✓ Is authentic and believable based on candidate's background, ✓ Addresses the core intent of the interview
+          question, ✓ Is concise but comprehensive (80-120 words), 'Remember:', '- Every answer should feel authentic and
+          be grounded in the candidate''s real experience', '- Focus on clear thinking and logical structure over rigid methodologies',
+        '- Show don''t tell - use specific examples rather than generic statements', '- Connect your experience to the target
+          role when relevant', '- Demonstrate both what you accomplished and how you think', '- Keep answers focused and impactful
+          without unnecessary length', '- Show continuous learning and growth mindset']
+      output_key: answers_data
+      function: create_fresh_agents
+  ANSWER_GENERATOR_AGENT:
+    type: instance
+    models: [gemini-2.0-flash]
+    params:
+      name: answer_generator
+      description: Generate personalized interview answers using clear thinking
+      instruction: ['You are an expert interview coach and answer generator. Your task is to create personalized, compelling
+          interview answers based on the candidate''s background and the specific questions provided.', '**Personal Summary
+          from Summarizer Agent:**', '{personal_summary}', '**Questions to Answer from Question Generator Agent:**', '{questions_data}',
+        'GOAL: Generate personalized, high-quality interview answers for each question using the candidate''s background information
+          from the personal summary.', 'ANALYSIS OF CANDIDATE BACKGROUND:', 'Based on the personal summary above, analyze:',
+        '- Resume information and work experience', '- Technical skills and competencies', '- Educational background', '-
+          Additional interests and passions', '- Career goals and motivations', '- Specific achievements and projects', 'ANSWER
+          GENERATION APPROACH:', '1. **Technical Questions**: Use the candidate''s technical background and experience to
+          craft detailed, competent answers', '2. **Behavioral Questions**: Reference specific examples from the candidate''s
+          experience using the STAR method (Situation, Task, Action, Result)', '3. **Situational Questions**: Apply the candidate''s
+          problem-solving approach and technical knowledge to hypothetical scenarios', '4. **Company-Specific Questions**:
+          Connect the candidate''s background and interests to the target role and company', 'ANSWER QUALITY REQUIREMENTS:',
+        '- Each answer should be 80-120 words (concise but comprehensive)', '- Use specific examples from the candidate''s
+          background when possible', '- Follow the STAR method for behavioral questions', '- Demonstrate technical competency
+          for technical questions', '- Show genuine interest and cultural fit for company-specific questions', '- Sound natural
+          and conversational, not overly rehearsed', '- Include relevant details that showcase the candidate''s strengths',
+        'ANALYSIS FRAMEWORK:', '1. **Question Analysis**: Understand what the interviewer is really asking for', '2. **Background
+          Mapping**: Connect the candidate''s experience to the question', '3. **Clear Structure**: Organize answers logically
+          but naturally', '4. **Impact Focus**: Highlight achievements, learnings, and quantifiable results', 'ANSWER STRATEGIES
+          BY QUESTION TYPE:', '**BEHAVIORAL QUESTIONS**:', '- Structure thinking clearly with logical flow', '- Use STAR methodology
+          when it fits naturally, but don''t force it', '- Focus on specific examples from candidate''s experience', '- Show
+          what you did, how you thought about it, and what resulted', '**TECHNICAL QUESTIONS**:', '- Demonstrate deep understanding
+          of concepts', '- Reference your actual experience with technologies', '- Explain your thought process and decision-making
+          clearly', '- Show how you''ve applied these skills in real projects', '- Keep explanations concise but thorough',
+        '**SITUATIONAL QUESTIONS**:', '- Show analytical thinking and problem-solving approach', '- Reference similar situations
+          from your experience', '- Demonstrate understanding of best practices', '- Consider multiple perspectives and trade-offs',
+        '- Present your reasoning clearly', '**COMPANY-SPECIFIC QUESTIONS**:', '- Show genuine interest and alignment with
+          the role', '- Connect your experience to the specific context', '- Demonstrate understanding of the role requirements',
+        '- Show enthusiasm for the opportunity', 'CRITICAL INSTRUCTIONS:', '- Parse the questions_data from the previous agent
+          to get the list of questions to answer', '- For each question in the questions_data, generate a personalized answer
+          based on the personal_summary', '- Use the candidate''s background from personal_summary to make answers authentic
+          and specific', '- Include the original question along with your generated answer for each item', 'REQUIRED OUTPUT
+          FORMAT:', 'You must output a JSON array EXACTLY matching this structure WITHOUT any markdown formatting or code
+          blocks:', '[', '{', '"question": "The original interview question",', '"answer": "Your generated personalized answer
+          (80-120 words)",', '"tags": ["QuestionType", "Topic1", "Topic2", "Topic3", "Topic4"]', '}', ']', 'IMPORTANT FORMATTING
+          INSTRUCTIONS:', '- Do NOT wrap the JSON in markdown code blocks (do not use ```json or ``` tags)', '- Return ONLY
+          the raw JSON array without any other text before or after', '- Ensure all JSON property names and values are correctly
+          formatted with proper quotes', '- Make sure the JSON is valid and complete', '- Each answer should be personalized
+          based on the candidate''s background', '- Keep the same tags as provided in the questions_data but ensure question
+          type is first tag', 'EXAMPLE OF GOOD OUTPUT:', '[', '{', '"question": "Tell me about a time when you had to optimize
+          database performance under pressure.",', '}', ']', 'ANSWER QUALITY CHECKLIST:', ✓ Uses specific examples from candidate's
+          actual experience, ✓ Includes quantifiable results and metrics, ✓ Demonstrates relevant technical and soft skills,
+        ✓ Shows problem-solving and analytical thinking, '✓ Has clear, logical structure', '✓ Shows growth, learning, and
+          impact', ✓ Is authentic and believable based on candidate's background, ✓ Addresses the core intent of the interview
+          question, ✓ Is concise but comprehensive (80-120 words), 'Remember:', '- Every answer should feel authentic and
+          be grounded in the candidate''s real experience', '- Focus on clear thinking and logical structure over rigid methodologies',
+        '- Show don''t tell - use specific examples rather than generic statements', '- Connect your experience to the target
+          role when relevant', '- Demonstrate both what you accomplished and how you think', '- Keep answers focused and impactful
+          without unnecessary length', '- Show continuous learning and growth mindset']
+      output_key: answers_data
+  INTERVIEW_JUDGE_AGENT:
+    type: instance
+    models: [gemini-2.0-flash]
+    tools: [google_search]
+    params:
+      name: feedback_generator
+      description: Generate personalized interview feedback based on interview conversation
+      instruction: get_interview_judge_instruction()
+  parallel_agent:
+    type: instance
+    params:
+      name: ParallelSummarizerAndSearch
+      description: Runs resume summarization and industry FAQ search in parallel
+      function: create_preparation_workflow
+      sub_agents: [summarizer_agent, search_agent]
+  preparation_workflow:
+    type: instance
+    params:
+      name: interview_preparation_workflow_{...}
+      description: Interview preparation workflow including resume summarizer, search, question generator, and answer generator.
+      function: create_preparation_workflow
+      sub_agents: [parallel_agent, question_generator_agent, answer_generator_agent]
+  question_generator_agent:
+    type: instance
+    models: [gemini-2.0-flash]
+    params:
+      name: question_generator
+      description: Generate customized interview questions based on user background, industry FAQs, and general BQs
+      instruction: ['You are an expert interview coach and question generator. Your task is to create a balanced mix of interview
+          questions by analyzing:', '**Personal Summary from Summarizer Agent:**', '{personal_summary}', '**Industry FAQs
+          from Search Agent:**', '{industry_faqs}', '## CRITICAL REQUIREMENT: EXACT QUESTION COUNT', '**MANDATORY**: Look
+          for the line "Number of questions to generate: [NUMBER]" in the personal summary above.', '**YOU MUST GENERATE EXACTLY
+          THAT MANY QUESTIONS - NO MORE, NO LESS**', '**Count carefully before submitting your response**', '**If you see
+          "Number of questions to generate: 50", you MUST generate exactly 50 questions**', '**If you see "Number of questions
+          to generate: 15", you MUST generate exactly 15 questions**', '## TASK OVERVIEW', '1. CANDIDATE''S PERSONAL BACKGROUND:
+          Their resume, skills, experience, and achievements (from personal summary above)', '2. TARGET JOB REQUIREMENTS:
+          The specific role they''re applying for and its requirements (from personal summary above)', '3. INDUSTRY COMMON
+          QUESTIONS: Standard interview questions for this role/company (from industry FAQs above)', '4. GENERAL BEHAVIORAL
+          QUESTIONS (BQ): From database of proven behavioral interview questions', 'Your goal is to generate interview questions
+          that:', '- Include a balanced mix of different question types', '- Some questions should be tailored to the candidate''s
+          specific experience and skills from the personal summary', '- Some questions should incorporate industry-specific
+          questions from the search results', '- Are concise but clear, focusing on essential aspects', '- Would realistically
+          be asked by interviewers for this specific position', '- Help assess both technical competency and behavioral fit',
+        'QUESTION TYPE DISTRIBUTION:', '- 30-40% Technical Questions: Role-specific technical skills and knowledge', '- 30-40%
+          Behavioral Questions: Past experiences, problem-solving, teamwork', '- 15-20% Situational Questions: Hypothetical
+          scenarios and decision-making', '- 10-15% Company-Specific Questions: Role understanding and motivation', 'QUESTION
+          GENERATION APPROACH:', '1. **Technical Questions**: Mix of general technical questions and those tailored to candidate''s
+          background', '2. **Behavioral Questions**: Mix of general BQs and those connecting to candidate''s experience',
+        '3. **Situational Questions**: Hypothetical scenarios relevant to the target role', '4. **Company-Specific Questions**:
+          Role understanding, motivation, and fit', 'ANALYSIS FRAMEWORK:', '1. **Personal Background Analysis**: Review the
+          candidate''s resumeInfo, additionalInfo, skills, and experience from the personal summary', '2. **Job Requirements
+          Mapping**: Understand the target job title and job description requirements from the personal summary', '3. **Industry
+          Context**: Include relevant industry-standard questions from the industry FAQs', '4. **BQ Selection**: Choose relevant
+          behavioral questions from the general BQ database', '5. **Balance**: Ensure good mix of personalized and general
+          questions', '## 🎯 CRITICAL NUMBER EXTRACTION PROCESS 🎯', 'STEP 1: Look for "Number of questions to generate: [NUMBER]"
+          in the personal summary', 'STEP 2: Write down that exact number', 'STEP 3: Generate exactly that many questions',
+        'STEP 4: Count your questions before finalizing', 'STEP 5: If the count doesn''t match, add or remove questions to
+          match exactly', '## CRITICAL INSTRUCTIONS:', '- Extract the exact number of questions to generate from the personal
+          summary above', '- Generate questions with appropriate difficulty for the target job level', '- Some questions should
+          reference the candidate''s background, others should be general', '- Ensure questions allow for clear, focused answers',
+        '- Keep questions concise but comprehensive', '- DO NOT generate answers - answers will be generated by a separate
+          answer_generator agent', '- 🚨 **GENERATE EXACTLY THE NUMBER OF QUESTIONS SPECIFIED IN THE PERSONAL SUMMARY** 🚨',
+        '## REQUIRED OUTPUT FORMAT:', 'You must output a JSON array EXACTLY matching this structure WITHOUT any markdown formatting
+          or code blocks:', '[', '{', '"question": "Concise, clear interview question",', '"answer": "",', '"tags": ["QuestionType",
+          "CoreSkill", "DifficultyLevel"]', '}', ']', '## 🏷️ SYSTEMATIC 3-TAG REQUIREMENT:', 'Each question MUST have exactly
+          3 tags following this logical structure:', '**TAG 1 - Question Type (MANDATORY)**:', '- "Technical" - Technical
+          skills, knowledge, or problem-solving', '- "Behavioral" - Past experiences, soft skills, teamwork', '- "Situational"
+          - Hypothetical scenarios, decision-making', '- "CompanySpecific" - Role understanding, motivation, company fit',
+        '**TAG 2 - Core Skill/Domain (MANDATORY)**:', 'Choose the most relevant skill or domain area for the question:', 'For
+          Technical Roles: "Programming", "SystemDesign", "Database", "Security", "DevOps", "Frontend", "Backend", "Mobile",
+          "DataScience", "CloudComputing"', 'For Business Roles: "Strategy", "Analytics", "Marketing", "Finance", "ProjectManagement",
+          "ProductManagement", "Leadership"', 'For Creative Roles: "Design", "UXResearch"', 'For Other Industries: "Healthcare",
+          "Education", "Engineering", "Research"', '**TAG 3 - Experience Level (MANDATORY)**:', '- "Entry" - Entry-level,
+          junior positions (0-2 years)', '- "Mid" - Mid-level positions (2-5 years)', '- "Senior" - Senior positions (5+ years)',
+        '## TAG SELECTION LOGIC:', '1. **Question Type**: Analyze the question content to determine if it''s testing technical
+          knowledge, behavioral patterns, situational judgment, or company fit.', '2. **Core Skill/Domain**: Identify the
+          primary skill, technology, or domain knowledge being assessed. Choose the most specific relevant tag from the lists
+          above.', '3. **Experience Level**: Consider the complexity and expectation level of the question:', '- Entry: Basic
+          concepts, foundational knowledge, simple scenarios', '- Mid: Intermediate complexity, some experience assumed, moderate
+          challenges', '- Senior: Advanced concepts, leadership scenarios, complex problem-solving', '## 🚨 FINAL QUALITY CONTROL
+          CHECKLIST 🚨', 'Before submitting your response, verify:', '✅ Did I find the "Number of questions to generate: [NUMBER]"
+          line?', '✅ Did I generate exactly that many questions?', '✅ Did I count my questions to confirm the exact number?',
+        '✅ Is my JSON properly formatted without markdown blocks?', '✅ Does each question have exactly 3 tags following the
+          systematic structure?', '✅ Are all "answer" fields set to empty strings?', '✅ Are all tags selected from the predefined
+          categories above?', 'IMPORTANT FORMATTING INSTRUCTIONS:', '- Do NOT wrap the JSON in markdown code blocks (do not
+          use ```json or ``` tags)', '- Return ONLY the raw JSON array without any other text before or after', '- Ensure
+          all JSON property names and values are correctly formatted with proper quotes', '- Make sure the JSON is valid and
+          complete', '- Each question should be unique and appropriately challenging', '- Include an empty "answer" field
+          (set to "") - answers will be filled by answer_generator', '- 🚨 **OUTPUT EXACTLY THE NUMBER OF QUESTIONS SPECIFIED
+          IN THE PERSONAL SUMMARY** 🚨', 'EXAMPLE OF GOOD OUTPUT:', '[', '{', '"question": "How would you design a scalable
+          API system for high-traffic applications?",', '"answer": "",', '"tags": ["Technical", "SystemDesign", "Senior"]',
+        '},', '{', '"question": "Tell me about a time you had to learn a new technology quickly to solve a problem.",', '"answer":
+          "",', '"tags": ["Behavioral", "Programming", "Mid"]', '},', '{', '"question": "If you discovered a critical security
+          vulnerability in production, how would you handle it?",', '"answer": "",', '"tags": ["Situational", "Security",
+          "Senior"]', '},', '{', '"question": "Why are you interested in this specific role and what do you hope to achieve?",',
+        '"answer": "",', '"tags": ["CompanySpecific", "Leadership", "Entry"]', '}', ']', '## 🎯 FINAL REMINDER 🎯', '- Extract
+          the exact number of questions from the personal summary input', '- Balance personalized questions with general industry-standard
+          questions', '- Include appropriate mix of Technical, Behavioral, Situational, and CompanySpecific questions', '-
+          Keep questions concise but comprehensive', '- Ensure questions allow for clear, focused answers', '- Use exactly
+          3 tags per question following the systematic structure', '- Select tags from the predefined categories to ensure
+          consistency and usefulness', '- 🚨 **GENERATE EXACTLY THE NUMBER OF QUESTIONS SPECIFIED IN THE PERSONAL SUMMARY**
+          🚨']
+      output_key: questions_data
+      function: create_fresh_agents
+  QUESTION_GENERATOR_AGENT:
+    type: instance
+    models: [gemini-2.0-flash]
+    params:
+      name: question_generator
+      description: Generate customized interview questions based on user background, industry FAQs, and general BQs
+      instruction: ['You are an expert interview coach and question generator. Your task is to create a balanced mix of interview
+          questions by analyzing:', '**Personal Summary from Summarizer Agent:**', '{personal_summary}', '**Industry FAQs
+          from Search Agent:**', '{industry_faqs}', '## CRITICAL REQUIREMENT: EXACT QUESTION COUNT', '**MANDATORY**: Look
+          for the line "Number of questions to generate: [NUMBER]" in the personal summary above.', '**YOU MUST GENERATE EXACTLY
+          THAT MANY QUESTIONS - NO MORE, NO LESS**', '**Count carefully before submitting your response**', '**If you see
+          "Number of questions to generate: 50", you MUST generate exactly 50 questions**', '**If you see "Number of questions
+          to generate: 15", you MUST generate exactly 15 questions**', '## TASK OVERVIEW', '1. CANDIDATE''S PERSONAL BACKGROUND:
+          Their resume, skills, experience, and achievements (from personal summary above)', '2. TARGET JOB REQUIREMENTS:
+          The specific role they''re applying for and its requirements (from personal summary above)', '3. INDUSTRY COMMON
+          QUESTIONS: Standard interview questions for this role/company (from industry FAQs above)', '4. GENERAL BEHAVIORAL
+          QUESTIONS (BQ): From database of proven behavioral interview questions', 'Your goal is to generate interview questions
+          that:', '- Include a balanced mix of different question types', '- Some questions should be tailored to the candidate''s
+          specific experience and skills from the personal summary', '- Some questions should incorporate industry-specific
+          questions from the search results', '- Are concise but clear, focusing on essential aspects', '- Would realistically
+          be asked by interviewers for this specific position', '- Help assess both technical competency and behavioral fit',
+        'QUESTION TYPE DISTRIBUTION:', '- 30-40% Technical Questions: Role-specific technical skills and knowledge', '- 30-40%
+          Behavioral Questions: Past experiences, problem-solving, teamwork', '- 15-20% Situational Questions: Hypothetical
+          scenarios and decision-making', '- 10-15% Company-Specific Questions: Role understanding and motivation', 'QUESTION
+          GENERATION APPROACH:', '1. **Technical Questions**: Mix of general technical questions and those tailored to candidate''s
+          background', '2. **Behavioral Questions**: Mix of general BQs and those connecting to candidate''s experience',
+        '3. **Situational Questions**: Hypothetical scenarios relevant to the target role', '4. **Company-Specific Questions**:
+          Role understanding, motivation, and fit', 'ANALYSIS FRAMEWORK:', '1. **Personal Background Analysis**: Review the
+          candidate''s resumeInfo, additionalInfo, skills, and experience from the personal summary', '2. **Job Requirements
+          Mapping**: Understand the target job title and job description requirements from the personal summary', '3. **Industry
+          Context**: Include relevant industry-standard questions from the industry FAQs', '4. **BQ Selection**: Choose relevant
+          behavioral questions from the general BQ database', '5. **Balance**: Ensure good mix of personalized and general
+          questions', '## 🎯 CRITICAL NUMBER EXTRACTION PROCESS 🎯', 'STEP 1: Look for "Number of questions to generate: [NUMBER]"
+          in the personal summary', 'STEP 2: Write down that exact number', 'STEP 3: Generate exactly that many questions',
+        'STEP 4: Count your questions before finalizing', 'STEP 5: If the count doesn''t match, add or remove questions to
+          match exactly', '## CRITICAL INSTRUCTIONS:', '- Extract the exact number of questions to generate from the personal
+          summary above', '- Generate questions with appropriate difficulty for the target job level', '- Some questions should
+          reference the candidate''s background, others should be general', '- Ensure questions allow for clear, focused answers',
+        '- Keep questions concise but comprehensive', '- DO NOT generate answers - answers will be generated by a separate
+          answer_generator agent', '- 🚨 **GENERATE EXACTLY THE NUMBER OF QUESTIONS SPECIFIED IN THE PERSONAL SUMMARY** 🚨',
+        '## REQUIRED OUTPUT FORMAT:', 'You must output a JSON array EXACTLY matching this structure WITHOUT any markdown formatting
+          or code blocks:', '[', '{', '"question": "Concise, clear interview question",', '"answer": "",', '"tags": ["QuestionType",
+          "CoreSkill", "DifficultyLevel"]', '}', ']', '## 🏷️ SYSTEMATIC 3-TAG REQUIREMENT:', 'Each question MUST have exactly
+          3 tags following this logical structure:', '**TAG 1 - Question Type (MANDATORY)**:', '- "Technical" - Technical
+          skills, knowledge, or problem-solving', '- "Behavioral" - Past experiences, soft skills, teamwork', '- "Situational"
+          - Hypothetical scenarios, decision-making', '- "CompanySpecific" - Role understanding, motivation, company fit',
+        '**TAG 2 - Core Skill/Domain (MANDATORY)**:', 'Choose the most relevant skill or domain area for the question:', 'For
+          Technical Roles: "Programming", "SystemDesign", "Database", "Security", "DevOps", "Frontend", "Backend", "Mobile",
+          "DataScience", "CloudComputing"', 'For Business Roles: "Strategy", "Analytics", "Marketing", "Finance", "ProjectManagement",
+          "ProductManagement", "Leadership"', 'For Creative Roles: "Design", "UXResearch"', 'For Other Industries: "Healthcare",
+          "Education", "Engineering", "Research"', '**TAG 3 - Experience Level (MANDATORY)**:', '- "Entry" - Entry-level,
+          junior positions (0-2 years)', '- "Mid" - Mid-level positions (2-5 years)', '- "Senior" - Senior positions (5+ years)',
+        '## TAG SELECTION LOGIC:', '1. **Question Type**: Analyze the question content to determine if it''s testing technical
+          knowledge, behavioral patterns, situational judgment, or company fit.', '2. **Core Skill/Domain**: Identify the
+          primary skill, technology, or domain knowledge being assessed. Choose the most specific relevant tag from the lists
+          above.', '3. **Experience Level**: Consider the complexity and expectation level of the question:', '- Entry: Basic
+          concepts, foundational knowledge, simple scenarios', '- Mid: Intermediate complexity, some experience assumed, moderate
+          challenges', '- Senior: Advanced concepts, leadership scenarios, complex problem-solving', '## 🚨 FINAL QUALITY CONTROL
+          CHECKLIST 🚨', 'Before submitting your response, verify:', '✅ Did I find the "Number of questions to generate: [NUMBER]"
+          line?', '✅ Did I generate exactly that many questions?', '✅ Did I count my questions to confirm the exact number?',
+        '✅ Is my JSON properly formatted without markdown blocks?', '✅ Does each question have exactly 3 tags following the
+          systematic structure?', '✅ Are all "answer" fields set to empty strings?', '✅ Are all tags selected from the predefined
+          categories above?', 'IMPORTANT FORMATTING INSTRUCTIONS:', '- Do NOT wrap the JSON in markdown code blocks (do not
+          use ```json or ``` tags)', '- Return ONLY the raw JSON array without any other text before or after', '- Ensure
+          all JSON property names and values are correctly formatted with proper quotes', '- Make sure the JSON is valid and
+          complete', '- Each question should be unique and appropriately challenging', '- Include an empty "answer" field
+          (set to "") - answers will be filled by answer_generator', '- 🚨 **OUTPUT EXACTLY THE NUMBER OF QUESTIONS SPECIFIED
+          IN THE PERSONAL SUMMARY** 🚨', 'EXAMPLE OF GOOD OUTPUT:', '[', '{', '"question": "How would you design a scalable
+          API system for high-traffic applications?",', '"answer": "",', '"tags": ["Technical", "SystemDesign", "Senior"]',
+        '},', '{', '"question": "Tell me about a time you had to learn a new technology quickly to solve a problem.",', '"answer":
+          "",', '"tags": ["Behavioral", "Programming", "Mid"]', '},', '{', '"question": "If you discovered a critical security
+          vulnerability in production, how would you handle it?",', '"answer": "",', '"tags": ["Situational", "Security",
+          "Senior"]', '},', '{', '"question": "Why are you interested in this specific role and what do you hope to achieve?",',
+        '"answer": "",', '"tags": ["CompanySpecific", "Leadership", "Entry"]', '}', ']', '## 🎯 FINAL REMINDER 🎯', '- Extract
+          the exact number of questions from the personal summary input', '- Balance personalized questions with general industry-standard
+          questions', '- Include appropriate mix of Technical, Behavioral, Situational, and CompanySpecific questions', '-
+          Keep questions concise but comprehensive', '- Ensure questions allow for clear, focused answers', '- Use exactly
+          3 tags per question following the systematic structure', '- Select tags from the predefined categories to ensure
+          consistency and usefulness', '- 🚨 **GENERATE EXACTLY THE NUMBER OF QUESTIONS SPECIFIED IN THE PERSONAL SUMMARY**
+          🚨']
+      output_key: questions_data
+  SEARCH_AGENT:
+    type: instance
+    models: [gemini-2.0-flash]
+    tools: [google_search]
+    params:
+      name: interview_questions_searcher
+      description: Search for common interview questions and experiences for specific job positions
+      instruction: [You are a professional interview preparation assistant. Your task is to search for and organize common
+          interview questions and experiences for specific job positions., '**Job Information:**', 'Job Title: {personal_summary.title}',
+        'Job Description: {personal_summary.jobDescription}', 'GOAL: Based on the job title and job description provided above,
+          search the Internet for the most common interview questions (general questions + interview experiences) for this
+          specific job position.', 'Please use the job title and job description to:', '1. SEARCH FOR INTERVIEW QUESTIONS:
+          Use the google_search tool to search for common interview questions and real interview experiences related to the
+          specified job position. Perform multiple searches to gather comprehensive information:', '- Search for general interview
+          questions for the position', '- Search for technical questions specific to the role', '- Search for interview experiences
+          from real candidates', '- Search for industry-specific questions', '- Search for behavioral questions commonly asked
+          for this role', '- If company is mentioned in job title or job description, include company-specific information',
+        '2. ORGANIZE THE RESULTS: Structure your findings into distinct categories of questions, with clear examples for each
+          category.', 'CRITICAL INSTRUCTIONS:', '- Use the job title and job description provided above as the basis for all
+          searches', '- Conduct a minimum of 5 different searches to gather comprehensive information', '- Use search queries
+          that include the job title, industry, and experience level mentioned in the job description', '- Prioritize recent
+          interview experiences from the past 2-3 years', '- Focus on questions specific to the job role rather than generic
+          interview questions', '- For technical roles, include technical questions and coding challenges', '- Include information
+          about interview processes and formats when available', '- Do not fabricate questions - only include questions found
+          in search results', '- Organize questions by category (technical, behavioral, etc.)', '- Include frequency information
+          when available (e.g., "commonly asked")', 'REQUIRED OUTPUT FORMAT:', 'You must output a JSON object EXACTLY matching
+          this structure WITHOUT any markdown formatting or code blocks:', '{', '"jobTitle": "String - The job title that
+          was searched for",', '"companyName": "String - The company name that was searched for (if mentioned in job description)",',
+        '"industry": "String - The industry or field",', '"experienceLevel": "String - The experience level that was targeted",',
+        '"technicalQuestions": [', '{', '"question": "String - The technical question",', '"frequency": "String - How frequently
+          this question appears (if known)",', '"source": "String - Source of this question (optional)"', '}', '],', '"behavioralQuestions":
+          [', '{', '"question": "String - The behavioral question",', '"frequency": "String - How frequently this question
+          appears (if known)",', '"source": "String - Source of this question (optional)"', '}', '],', '"situationalQuestions":
+          [', '{', '"question": "String - The situational question",', '"frequency": "String - How frequently this question
+          appears (if known)",', '"source": "String - Source of this question (optional)"', '}', '],', '"companySpecificQuestions":
+          [', '{', '"question": "String - The company-specific question",', '"frequency": "String - How frequently this question
+          appears (if known)",', '"company": "String - The company this question is associated with",', '"source": "String
+          - Source of this question (optional)"', '}', '],', '"interviewProcess": {', '"stages": [', '{', '"stageName": "String
+          - Name of the interview stage",', '"description": "String - Description of what happens in this stage",', '"typicalQuestions":
+          ["String - Typical questions in this stage"]', '}', '],', '"tips": ["String - Tips for succeeding in these interviews"],',
+        '"commonChallenges": ["String - Common challenges candidates face"]', '},', '"searchQueries": ["String - List of search
+          queries used to find this information"]', '}', 'IMPORTANT FORMATTING INSTRUCTIONS:', '- Do NOT wrap the JSON in
+          markdown code blocks (do not use ```json or ``` tags)', '- Return ONLY the raw JSON object without any other text
+          before or after', '- Return a complete, valid JSON without truncation', '- Ensure all JSON property names and values
+          are correctly formatted with proper quotes', '- Ensure proper nesting of arrays and objects', '- If you cannot find
+          information for a specific field, include an empty array or "Not found" string rather than omitting the field']
+      output_key: industry_faqs
+  search_agent:
+    type: instance
+    models: [gemini-2.0-flash]
+    tools: [google_search]
+    params:
+      name: interview_questions_searcher
+      description: Search for common interview questions and experiences for specific job positions
+      instruction: [You are a professional interview preparation assistant. Your task is to search for and organize common
+          interview questions and experiences for specific job positions., '**Job Information:**', 'Job Title: {personal_summary.title}',
+        'Job Description: {personal_summary.jobDescription}', 'GOAL: Based on the job title and job description provided above,
+          search the Internet for the most common interview questions (general questions + interview experiences) for this
+          specific job position.', 'Please use the job title and job description to:', '1. SEARCH FOR INTERVIEW QUESTIONS:
+          Use the google_search tool to search for common interview questions and real interview experiences related to the
+          specified job position. Perform multiple searches to gather comprehensive information:', '- Search for general interview
+          questions for the position', '- Search for technical questions specific to the role', '- Search for interview experiences
+          from real candidates', '- Search for industry-specific questions', '- Search for behavioral questions commonly asked
+          for this role', '- If company is mentioned in job title or job description, include company-specific information',
+        '2. ORGANIZE THE RESULTS: Structure your findings into distinct categories of questions, with clear examples for each
+          category.', 'CRITICAL INSTRUCTIONS:', '- Use the job title and job description provided above as the basis for all
+          searches', '- Conduct a minimum of 5 different searches to gather comprehensive information', '- Use search queries
+          that include the job title, industry, and experience level mentioned in the job description', '- Prioritize recent
+          interview experiences from the past 2-3 years', '- Focus on questions specific to the job role rather than generic
+          interview questions', '- For technical roles, include technical questions and coding challenges', '- Include information
+          about interview processes and formats when available', '- Do not fabricate questions - only include questions found
+          in search results', '- Organize questions by category (technical, behavioral, etc.)', '- Include frequency information
+          when available (e.g., "commonly asked")', 'REQUIRED OUTPUT FORMAT:', 'You must output a JSON object EXACTLY matching
+          this structure WITHOUT any markdown formatting or code blocks:', '{', '"jobTitle": "String - The job title that
+          was searched for",', '"companyName": "String - The company name that was searched for (if mentioned in job description)",',
+        '"industry": "String - The industry or field",', '"experienceLevel": "String - The experience level that was targeted",',
+        '"technicalQuestions": [', '{', '"question": "String - The technical question",', '"frequency": "String - How frequently
+          this question appears (if known)",', '"source": "String - Source of this question (optional)"', '}', '],', '"behavioralQuestions":
+          [', '{', '"question": "String - The behavioral question",', '"frequency": "String - How frequently this question
+          appears (if known)",', '"source": "String - Source of this question (optional)"', '}', '],', '"situationalQuestions":
+          [', '{', '"question": "String - The situational question",', '"frequency": "String - How frequently this question
+          appears (if known)",', '"source": "String - Source of this question (optional)"', '}', '],', '"companySpecificQuestions":
+          [', '{', '"question": "String - The company-specific question",', '"frequency": "String - How frequently this question
+          appears (if known)",', '"company": "String - The company this question is associated with",', '"source": "String
+          - Source of this question (optional)"', '}', '],', '"interviewProcess": {', '"stages": [', '{', '"stageName": "String
+          - Name of the interview stage",', '"description": "String - Description of what happens in this stage",', '"typicalQuestions":
+          ["String - Typical questions in this stage"]', '}', '],', '"tips": ["String - Tips for succeeding in these interviews"],',
+        '"commonChallenges": ["String - Common challenges candidates face"]', '},', '"searchQueries": ["String - List of search
+          queries used to find this information"]', '}', 'IMPORTANT FORMATTING INSTRUCTIONS:', '- Do NOT wrap the JSON in
+          markdown code blocks (do not use ```json or ``` tags)', '- Return ONLY the raw JSON object without any other text
+          before or after', '- Return a complete, valid JSON without truncation', '- Ensure all JSON property names and values
+          are correctly formatted with proper quotes', '- Ensure proper nesting of arrays and objects', '- If you cannot find
+          information for a specific field, include an empty array or "Not found" string rather than omitting the field']
+      output_key: industry_faqs
+      function: create_fresh_agents
+  summarizer_agent:
+    type: instance
+    models: [gemini-2.0-flash]
+    params:
+      name: resume_summarizer
+      description: Summarize and organize user's resume and related information
+      instruction: [You are a professional resume analyzer and summarizer. Extract and organize information from provided
+          inputs into a structured JSON format., 'Please process the following inputs with specific requirements:', '1. RESUME
+          CONTENT: PRESERVE ALL ORIGINAL INFORMATION with complete accuracy, but present it in a well-structured, readable
+          narrative. Include EVERY skill, experience detail, education credential, certification, and achievement. Do not
+          omit any information from the original resume, no matter how minor it seems. All dates, job titles, responsibilities,
+          and technical skills must be preserved exactly as presented.', '2. LINKEDIN INFORMATION: You will receive pre-processed
+          LinkedIn profile information. This content has already been extracted and formatted from the user''s LinkedIn profile.
+          Process and summarize this information. If no content is provided or the content indicates analysis failed, respond
+          with EXACTLY "No information" for the linkedinInfo field.', '3. GITHUB ANALYSIS RESULT: You will receive a pre-processed
+          GitHub profile analysis. This contains detailed information about the user''s GitHub profile, repositories, programming
+          languages, and project descriptions. Process and summarize this information. If no content is provided or the content
+          indicates analysis failed, respond with EXACTLY "No information" for the githubInfo field.', '4. PORTFOLIO INFORMATION:
+          You will receive pre-analyzed portfolio content. This content has already been extracted and formatted from the
+          user''s portfolio website. Process and summarize this information. If no content is provided or the content indicates
+          analysis failed, respond with EXACTLY "No information" for the portfolioInfo field.', 'CRITICAL INSTRUCTIONS:',
+        '- All LinkedIn, GitHub, and Portfolio information will be provided as pre-processed content', '- DO NOT attempt to
+          search for any URLs or external information', '- Process only the content directly provided in the input parameters',
+        '- For any missing or failed analysis content, ALWAYS respond with EXACTLY "No information" for that field', '- Do
+          not return an empty string or any other text when information is missing', '- Only include information directly
+          provided in the input content', '- Never guess, infer, or fabricate information', 'REQUIRED OUTPUT FORMAT:', 'You
+          must output a JSON object EXACTLY matching this structure WITHOUT any markdown formatting or code blocks. All fields
+          must be simple strings, not nested objects:', '{', '"title": "String - Target company name, job title from JD (format:
+          company, position)",', '"linkedinInfo": "String - Summary of the provided LinkedIn content, including the user''s
+          name, location, professional headline, and profile summary. If no LinkedIn content is provided or analysis failed,
+          respond with EXACTLY ''No information''",', '"githubInfo": "String - Summary of the provided GitHub Analysis Result,
+          including profile information, repository details, programming languages, and project descriptions. If no GitHub
+          Analysis Result is provided or analysis failed, respond with EXACTLY ''No information''",', '"portfolioInfo": "String
+          - Summary of the provided Portfolio content, including project names, descriptions, and tech stacks used. If no
+          Portfolio content is provided or analysis failed, respond with EXACTLY ''No information''",', '"additionalInfo":
+          "String - Summary ALL other relevant information from user",', '"jobDescription": "String - the target position
+          and ALL requirements"', '}', 'IMPORTANT FORMATTING INSTRUCTIONS:', '- Do NOT wrap the JSON in markdown code blocks
+          (do not use ```json or ``` tags)', '- Return ONLY the raw JSON object without any other text before or after', '-
+          Return a complete, valid JSON without truncation', '- Ensure all JSON property names and values are correctly formatted
+          with proper quotes', '- DO NOT create nested JSON objects within any field. Each field must contain only a single
+          text string.', '- Ensure proper formatting of strings with escape characters when needed']
+      output_key: personal_summary
+      function: create_fresh_agents
+  SUMMARIZER_AGENT:
+    type: instance
+    models: [gemini-2.0-flash]
+    tools: [google_search]
+    params:
+      name: resume_summarizer
+      description: Summarize and organize user's resume and related information
+      instruction: [You are a professional resume analyzer and summarizer. Extract and organize information from provided
+          inputs into a structured JSON format., 'Please process the following inputs with specific requirements:', '1. RESUME
+          CONTENT: PRESERVE ALL ORIGINAL INFORMATION with complete accuracy, but present it in a well-structured, readable
+          narrative. Include EVERY skill, experience detail, education credential, certification, and achievement. Do not
+          omit any information from the original resume, no matter how minor it seems. All dates, job titles, responsibilities,
+          and technical skills must be preserved exactly as presented.', '2. LINKEDIN INFORMATION: You will receive pre-processed
+          LinkedIn profile information. This content has already been extracted and formatted from the user''s LinkedIn profile.
+          Process and summarize this information. If no content is provided or the content indicates analysis failed, respond
+          with EXACTLY "No information" for the linkedinInfo field.', '3. GITHUB ANALYSIS RESULT: You will receive a pre-processed
+          GitHub profile analysis. This contains detailed information about the user''s GitHub profile, repositories, programming
+          languages, and project descriptions. Process and summarize this information. If no content is provided or the content
+          indicates analysis failed, respond with EXACTLY "No information" for the githubInfo field.', '4. PORTFOLIO INFORMATION:
+          You will receive pre-analyzed portfolio content. This content has already been extracted and formatted from the
+          user''s portfolio website. Process and summarize this information. If no content is provided or the content indicates
+          analysis failed, respond with EXACTLY "No information" for the portfolioInfo field.', 'CRITICAL INSTRUCTIONS:',
+        '- All LinkedIn, GitHub, and Portfolio information will be provided as pre-processed content', '- DO NOT attempt to
+          search for any URLs or external information', '- Process only the content directly provided in the input parameters',
+        '- For any missing or failed analysis content, ALWAYS respond with EXACTLY "No information" for that field', '- Do
+          not return an empty string or any other text when information is missing', '- Only include information directly
+          provided in the input content', '- Never guess, infer, or fabricate information', 'REQUIRED OUTPUT FORMAT:', 'You
+          must output a JSON object EXACTLY matching this structure WITHOUT any markdown formatting or code blocks. All fields
+          must be simple strings, not nested objects:', '{', '"title": "String - Target company name, job title from JD (format:
+          company, position)",', '"linkedinInfo": "String - Summary of the provided LinkedIn content, including the user''s
+          name, location, professional headline, and profile summary. If no LinkedIn content is provided or analysis failed,
+          respond with EXACTLY ''No information''",', '"githubInfo": "String - Summary of the provided GitHub Analysis Result,
+          including profile information, repository details, programming languages, and project descriptions. If no GitHub
+          Analysis Result is provided or analysis failed, respond with EXACTLY ''No information''",', '"portfolioInfo": "String
+          - Summary of the provided Portfolio content, including project names, descriptions, and tech stacks used. If no
+          Portfolio content is provided or analysis failed, respond with EXACTLY ''No information''",', '"additionalInfo":
+          "String - Summary ALL other relevant information from user",', '"jobDescription": "String - the target position
+          and ALL requirements"', '}', 'IMPORTANT FORMATTING INSTRUCTIONS:', '- Do NOT wrap the JSON in markdown code blocks
+          (do not use ```json or ``` tags)', '- Return ONLY the raw JSON object without any other text before or after', '-
+          Return a complete, valid JSON without truncation', '- Ensure all JSON property names and values are correctly formatted
+          with proper quotes', '- DO NOT create nested JSON objects within any field. Each field must contain only a single
+          text string.', '- Ensure proper formatting of strings with escape characters when needed']
+      output_key: personal_summary
+
+models:
+  gemini-2.0-flash:
+    type: literal
+    agents: [SEARCH_AGENT, INTERVIEW_JUDGE_AGENT, summarizer_agent, search_agent, question_generator_agent, answer_generator_agent,
+      QUESTION_GENERATOR_AGENT, ANSWER_GENERATOR_AGENT, SUMMARIZER_AGENT]
+  gemini-2.0-flash-live-preview-04-09:
+    type: literal
+    agents: [agent.1]
+  gemini-2.5-flash:
+    type: default
+    agents: [agent.0]
+
+tools:
+  google_search:
+    type: module
+    agents: [SEARCH_AGENT, INTERVIEW_JUDGE_AGENT, search_agent, SUMMARIZER_AGENT]
+
+teams:
+  parallel_agent:
+    type: parallel
+    agents: [parallel_agent, summarizer_agent, search_agent]
+  preparation_workflow:
+    type: sequential
+    agents: [preparation_workflow, parallel_agent, question_generator_agent, answer_generator_agent]
+
+imports:
+  _run_judge_from_session: backend.agents.interview_judge.agent._run_judge_from_session
+  agent_to_client_messaging: backend.agents.interviewer.agent.agent_to_client_messaging
+  analyze_portfolio_url: backend.services.portfolio.portfolio_analyzer.analyze_portfolio_url
+  ANSWER_GENERATION_PROMPT: prompt.ANSWER_GENERATION_PROMPT
+  Any: typing.Any
+  APIRouter: fastapi.APIRouter
+  argparse: argparse
+  async_playwright: playwright.async_api.async_playwright
+  asyncio: asyncio
+  auth: backend.tools.firebase_config.auth
+  base64: base64
+  BaseModel: pydantic.BaseModel
+  BeautifulSoup: bs4.BeautifulSoup
+  Blob: google.genai.types.Blob
+  Body: fastapi.Body
+  Browser: playwright.async_api.Browser
+  client_to_agent_messaging: backend.agents.interviewer.agent.client_to_agent_messaging
+  CodingProblems: backend.data.schemas.CodingProblems
+  Comment: bs4.Comment
+  Content: google.genai.types.Content
+  CORSMiddleware: fastapi.middleware.cors.CORSMiddleware
+  create_mock_data: test.mock_data.create_mock_data
+  credentials: firebase_admin.credentials
+  dataclass: dataclasses.dataclass
+  datetime: datetime.datetime
+  db: backend.tools.firebase_config.db
+  DDGS: duckduckgo_search.DDGS
+  Depends: fastapi.Depends
+  Dict: typing.Dict
+  EmailStr: pydantic.EmailStr
+  EmptyPDFError: backend.services.pdf.exceptions.EmptyPDFError
+  Event: google.adk.events.Event
+  FastAPI: fastapi.FastAPI
+  Feedback: backend.data.schemas.Feedback
+  Field: pydantic.Field
+  field: dataclasses.field
+  File: fastapi.File
+  FileTooLargeError: backend.services.pdf.exceptions.FileTooLargeError
+  firebase_admin: firebase_admin
+  firestore: firebase_admin.firestore
+  firestore_db: backend.data.database.firestore_db
+  Form: fastapi.Form
+  futures: concurrent.futures
+  GeneralBQ: backend.data.schemas.GeneralBQ
+  generate_custom_questions: agent.generate_custom_questions
+  generate_personalized_answers: agent.generate_personalized_answers
+  generate_session_id: backend.coordinator.preparation_workflow.generate_session_id
+  get_background_prompt: prompt.get_background_prompt
+  get_interview_judge_input_data: prompt.get_interview_judge_input_data
+  get_interview_judge_instruction: prompt.get_interview_judge_instruction
+  GitHubAnalysisError: exceptions.GitHubAnalysisError
+  GitHubAnalyzer: github_analyzer.GitHubAnalyzer
+  GitHubAPIClient: api_client.GitHubAPIClient
+  GitHubAPIError: exceptions.GitHubAPIError
+  GitHubProfile: data_models.GitHubProfile
+  GitHubRateLimitError: exceptions.GitHubRateLimitError
+  GitHubRepository: data_models.GitHubRepository
+  GitHubUserNotFoundError: exceptions.GitHubUserNotFoundError
+  google_search: google.adk.tools.google_search
+  HTTPAuthorizationCredentials: fastapi.security.HTTPAuthorizationCredentials
+  HTTPBearer: fastapi.security.HTTPBearer
+  HTTPException: fastapi.HTTPException
+  HttpUrl: pydantic.HttpUrl
+  InMemorySessionService: google.adk.sessions.InMemorySessionService
+  Interview: backend.data.schemas.Interview
+  InterviewStartRequest: backend.api.schemas.InterviewStartRequest
+  InvalidFileTypeError: backend.services.pdf.exceptions.InvalidFileTypeError
+  InvalidGitHubURLError: exceptions.InvalidGitHubURLError
+  InvalidPDFError: backend.services.pdf.exceptions.InvalidPDFError
+  json: json
+  JSONResponse: fastapi.responses.JSONResponse
+  List: typing.List
+  LiveRequestQueue: google.adk.agents.LiveRequestQueue
+  LlmAgent: google.adk.agents.LlmAgent
+  load_dotenv: dotenv.load_dotenv
+  load_firebase_key: backend.tools.sercret_manage.load_firebase_key
+  logging: logging
+  MagicMock: unittest.mock.MagicMock
+  manager: backend.tools.connection_manager.manager
+  normalize_file: backend.scripts.normalize.normalize_file
+  Optional: typing.Optional
+  os: os
+  Page: playwright.async_api.Page
+  ParallelAgent: google.adk.agents.ParallelAgent
+  Part: google.genai.types.Part
+  Path: pathlib.Path
+  PDFConfig: backend.config.PDFConfig
+  PDFProcessingError: backend.services.pdf.exceptions.PDFProcessingError
+  PDFProcessor: backend.services.pdf.PDFProcessor
+  PersonalExperience: backend.data.schemas.PersonalExperience
+  PlaywrightTimeoutError: playwright.async_api.TimeoutError
+  PortfolioAnalysisError: exceptions.PortfolioAnalysisError
+  PortfolioConfig: backend.config.PortfolioConfig
+  PortfolioContentError: exceptions.PortfolioContentError
+  PortfolioContentExtractor: content_extractor.PortfolioContentExtractor
+  PortfolioData: data_models.PortfolioData
+  PortfolioScrapingError: exceptions.PortfolioScrapingError
+  PortfolioTimeoutError: exceptions.PortfolioTimeoutError
+  PortfolioURLError: exceptions.PortfolioURLError
+  Profile: backend.data.schemas.Profile
+  ProjectInfo: data_models.ProjectInfo
+  Query: fastapi.Query
+  QUESTION_GENERATION_PROMPT: prompt.QUESTION_GENERATION_PROMPT
+  re: re
+  RecommendedQA: backend.data.schemas.RecommendedQA
+  Request: fastapi.Request
+  requests: requests
+  RequestValidationError: fastapi.exceptions.RequestValidationError
+  router: backend.api.routes.router
+  run_preparation_workflow: backend.coordinator.preparation_workflow.run_preparation_workflow
+  RunConfig: google.adk.runners.RunConfig
+  Runner: google.adk.runners.Runner
+  save_transcript: backend.agents.interviewer.agent.save_transcript
+  scrape_portfolio_url: web_scraper.scrape_portfolio_url
+  search_interview_questions: agent.search_interview_questions
+  SEARCH_PROMPT: backend.agents.search.prompt.SEARCH_PROMPT
+  secretmanager: google.cloud.secretmanager
+  secrets: secrets
+  SequentialAgent: google.adk.agents.SequentialAgent
+  session_service: backend.coordinator.session_manager.session_service
+  Set: typing.Set
+  set_google_cloud_env_vars: backend.config.set_google_cloud_env_vars
+  start_agent_session: backend.agents.interviewer.agent.start_agent_session
+  status: fastapi.status
+  string: string
+  subprocess: subprocess
+  summarize_resume: agent.summarize_resume
+  SUMMARIZER_PROMPT: prompt.SUMMARIZER_PROMPT
+  sys: sys
+  time: time
+  timedelta: datetime.timedelta
+  timezone: datetime.timezone
+  traceback: traceback
+  Tuple: typing.Tuple
+  types: google.genai.types
+  UploadFile: fastapi.UploadFile
+  urlparse: urllib.parse.urlparse
+  ValidationError: pydantic.ValidationError
+  WebSocket: fastapi.WebSocket
+  WebSocketDisconnect: fastapi.WebSocketDisconnect
+  Workflow: backend.data.schemas.Workflow
+
+functions:
+  __aenter__:
+    type: async
+    module: backend.services.portfolio.web_scraper
+    args: [self]
+  __aexit__:
+    type: async
+    module: backend.services.portfolio.web_scraper
+    args: [self, exc_type, exc_val, exc_tb]
+  __init__:
+    type: sync
+    module: backend.data.database
+    args: [self, db]
+  __post_init__:
+    type: sync
+    module: backend.services.portfolio.data_models
+    args: [self]
+  _close_browser:
+    type: async
+    module: backend.services.portfolio.web_scraper
+    args: [self]
+  _extract_description:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, soup]
+    params:
+      returns: str
+  _extract_experience:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, soup]
+    params:
+      returns: str
+  _extract_projects:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, soup]
+    params:
+      returns: List[ProjectInfo]
+  _extract_single_project:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, element]
+    params:
+      returns: ProjectInfo
+  _extract_skills:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, soup]
+    params:
+      returns: List[str]
+  _extract_tech_from_text:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, text]
+    params:
+      returns: Set[str]
+  _extract_technologies_from_element:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, element]
+    params:
+      returns: List[str]
+  _extract_title:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, soup]
+    params:
+      returns: str
+  _fetch_readme_content:
+    type: async
+    module: backend.services.github.github_analyzer
+    args: [self, repositories]
+  _fetch_repositories:
+    type: async
+    module: backend.services.github.github_analyzer
+    args: [self, profile]
+  _get_clean_text:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, soup]
+    params:
+      returns: str
+  _init_browser:
+    type: async
+    module: backend.services.portfolio.web_scraper
+    args: [self]
+  _is_descriptive_text:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, text]
+    params:
+      returns: bool
+  _looks_like_html:
+    type: sync
+    module: backend.scripts.normalize
+    args: [s]
+    params:
+      returns: bool
+  _make_request:
+    type: sync
+    module: backend.services.github.api_client
+    args: [self, endpoint, params]
+    params:
+      returns: Dict
+  _maybe_read_file:
+    type: sync
+    module: backend.scripts.normalize
+    args: [s]
+    params:
+      returns: str
+  _run_answer_generator:
+    type: async
+    module: backend.agents.answer_generator.agent
+    args: [questions_data, personal_summary]
+  _run_answer_generator_and_save:
+    type: async
+    module: backend.agents.answer_generator.agent
+    args: [questions_data, personal_summary, user_id, workflow_id]
+  _run_judge_from_session:
+    type: async
+    module: backend.agents.interview_judge.agent
+    args: [session]
+  _run_question_generator:
+    type: async
+    module: backend.agents.question_generator.agent
+    args: [personal_summary, industry_faqs, num_questions]
+  _run_searcher:
+    type: async
+    module: backend.agents.search.agent
+    args: [job_description]
+  _run_summarizer:
+    type: async
+    module: backend.agents.summarizer.agent
+    args: [resume_text, linkedinLink, githubLink, portfolioLink, additionalInfo, job_description]
+  _save_answers_to_db:
+    type: async
+    module: backend.agents.answer_generator.agent
+    args: [answers_result, user_id, workflow_id]
+  _save_workflow_results_to_database:
+    type: async
+    module: backend.coordinator.preparation_workflow
+    args: [user_id, session_id, session_state_updates]
+  _validate_url:
+    type: sync
+    module: backend.services.portfolio.web_scraper
+    args: [self, url]
+    params:
+      returns: str
+  agent_to_client_messaging:
+    type: async
+    module: backend.agents.interviewer.agent
+    args: [websocket, live_events, session]
+  analyze_github_profile:
+    type: async
+    module: backend.services.github.github_analyzer
+    args: [self, github_url]
+    params:
+      returns: GitHubProfile
+  analyze_portfolio_url:
+    type: async
+    module: backend.services.portfolio.portfolio_analyzer
+    args: [url]
+    params:
+      returns: str
+  analyze_portfolio_url_detailed:
+    type: async
+    module: backend.services.portfolio.portfolio_analyzer
+    args: [url]
+    params:
+      returns: PortfolioData
+  analyze_url:
+    type: async
+    module: backend.services.portfolio.portfolio_analyzer
+    args: [self, url]
+    params:
+      returns: PortfolioData
+  calculate_statistics:
+    type: sync
+    module: backend.services.github.data_models
+    args: [self]
+  clean_html_to_text:
+    type: sync
+    module: backend.scripts.normalize
+    args: [raw_html]
+    params:
+      returns: str
+  cleanup_file:
+    type: sync
+    module: backend.scripts.run_and_upload
+    args: [files]
+  client_to_agent_messaging:
+    type: async
+    module: backend.agents.interviewer.agent
+    args: [websocket, live_request_queue, session]
+  create_fresh_agents:
+    type: sync
+    module: backend.coordinator.preparation_workflow
+  create_interview:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, session_id, workflow_id, interview_data]
+    params:
+      returns: Dict
+  create_or_update_profile:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, profile_data]
+    params:
+      returns: Dict
+  create_or_update_workflow:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, session_id, workflow_data]
+    params:
+      returns: Dict
+  create_preparation_workflow:
+    type: sync
+    module: backend.coordinator.preparation_workflow
+    args: [workflow_name]
+  deduplicate_resources:
+    type: sync
+    module: backend.agents.interview_judge.agent
+    args: [feedback_json]
+  delete_coding_problems:
+    type: sync
+    module: backend.data.database
+    args: [self]
+    params:
+      returns: Dict
+  delete_general_bqs:
+    type: sync
+    module: backend.data.database
+    args: [self]
+    params:
+      returns: Dict
+  delete_interview:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id, interview_id]
+    params:
+      returns: Dict
+  delete_profile:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id]
+    params:
+      returns: Dict
+  delete_workflow:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id]
+    params:
+      returns: Dict
+  extract_complexities_from_solution_text:
+    type: sync
+    module: backend.scripts.normalize
+    args: [solution_html]
+    params:
+      returns: Tuple
+  extract_constraints_preserve_sup:
+    type: sync
+    module: backend.scripts.normalize
+    args: [raw_html]
+    params:
+      returns: List[str]
+  extract_json_from_response:
+    type: sync
+    module: backend.coordinator.preparation_workflow
+    args: [response_text]
+    params:
+      returns: dict
+  extract_portfolio_data:
+    type: sync
+    module: backend.services.portfolio.content_extractor
+    args: [self, html_content, url]
+    params:
+      returns: PortfolioData
+  fetch_single_readme:
+    type: async
+    module: backend.services.github.github_analyzer
+    args: [repo]
+  from_api_response:
+    type: sync
+    module: backend.services.github.data_models
+    args: [cls, user_data]
+    params:
+      returns: GitHubProfile
+  generate_and_save_personalized_answers:
+    type: sync
+    module: backend.agents.answer_generator.agent
+    args: [questions_data, personal_summary, user_id, workflow_id]
+  generate_custom_questions:
+    type: sync
+    module: backend.agents.question_generator.agent
+    args: [personal_summary, industry_faqs, num_questions]
+  generate_feedback:
+    type: async
+    module: backend.api.routes
+    args: [workflow_id, session_id, user]
+  generate_personalized_answers:
+    type: sync
+    module: backend.agents.answer_generator.agent
+    args: [questions_data, personal_summary]
+  generate_session_id:
+    type: sync
+    module: backend.coordinator.preparation_workflow
+    args: [input_data]
+  get_all_interviews:
+    type: sync
+    module: backend.api.routes
+    args: [workflow_id, user]
+  get_all_workflows:
+    type: sync
+    module: backend.api.routes
+    args: [user]
+  get_analyzer:
+    type: sync
+    module: backend.services.portfolio.portfolio_analyzer
+    params:
+      returns: PortfolioAnalyzer
+  get_background_prompt:
+    type: sync
+    module: backend.agents.interviewer.prompt
+    args: [personal_experience, recommend_qas]
+  get_coding_problems:
+    type: sync
+    module: backend.data.database
+    args: [self, problem_id]
+    params:
+      returns: Optional[Dict]
+  get_feedback:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id, interview_id]
+    params:
+      returns: Optional[Dict]
+  get_general_bqs:
+    type: sync
+    module: backend.data.database
+    args: [self]
+    params:
+      returns: Optional[List[Dict]]
+  get_github_summary_for_workflow:
+    type: sync
+    module: backend.services.github.github_analyzer
+    args: [self, github_url]
+    params:
+      returns: str
+  get_interview:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id, interview_id]
+    params:
+      returns: Optional[Dict]
+  get_interview_judge_input_data:
+    type: sync
+    module: backend.agents.interview_judge.prompt
+    args: [personal_experience, transcript, recommend_qas]
+  get_interview_judge_instruction:
+    type: sync
+    module: backend.agents.interview_judge.prompt
+  get_interviews_for_workflow:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id]
+    params:
+      returns: List[Dict]
+  get_personal_experience:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id]
+    params:
+      returns: Optional[Dict]
+  get_profile:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id]
+    params:
+      returns: Optional[Dict]
+  get_rate_limit_info:
+    type: sync
+    module: backend.services.github.github_analyzer
+    args: [self]
+    params:
+      returns: dict
+  get_rate_limit_status:
+    type: sync
+    module: backend.services.github.api_client
+    args: [self]
+    params:
+      returns: Dict
+  get_recommended_qas:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id]
+    params:
+      returns: Optional[List[Dict]]
+  get_repository:
+    type: sync
+    module: backend.services.github.api_client
+    args: [self, owner, repo_name]
+    params:
+      returns: Dict
+  get_repository_readme:
+    type: sync
+    module: backend.services.github.api_client
+    args: [self, owner, repo_name]
+    params:
+      returns: Optional[str]
+  get_transcript:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id, interview_id]
+    params:
+      returns: Optional[List[Dict]]
+  get_user:
+    type: sync
+    module: backend.services.github.api_client
+    args: [self, username]
+    params:
+      returns: Dict
+  get_user_info:
+    type: sync
+    module: backend.api.routes
+    args: [user]
+  get_user_repos:
+    type: sync
+    module: backend.services.github.api_client
+    args: [self, username, sort, per_page]
+    params:
+      returns: List[Dict]
+  get_workflow:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id]
+    params:
+      returns: Optional[Dict]
+  get_workflows_for_user:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id]
+    params:
+      returns: List[Dict]
+  global_exception_handler:
+    type: async
+    module: backend.app
+    args: [request, exc]
+  has_content:
+    type: sync
+    module: backend.services.portfolio.data_models
+    args: [self]
+    params:
+      returns: bool
+  html_to_text_with_sup_inline:
+    type: sync
+    module: backend.scripts.normalize
+    args: [raw_html]
+    params:
+      returns: str
+  init_user_profile:
+    type: sync
+    module: backend.api.routes
+    args: [user]
+  is_session_expired:
+    type: sync
+    module: backend.agents.interviewer.agent
+    args: [session]
+  is_valid_and_reachable_url:
+    type: sync
+    module: backend.agents.interview_judge.agent
+    args: [url]
+  load_firebase_key:
+    type: sync
+    module: backend.tools.sercret_manage
+  main:
+    type: sync
+    module: backend.scripts.normalize
+  normalize_file:
+    type: sync
+    module: backend.scripts.normalize
+    args: [input_path, output_path, first_n, start_id, overrides_path]
+    params:
+      returns: None
+  normalize_one:
+    type: sync
+    module: backend.scripts.normalize
+    args: [raw, overrides, start_id]
+    params:
+      returns: Dict
+  parse_and_validate_feedback:
+    type: sync
+    module: backend.agents.interview_judge.agent
+    args: [response_text]
+  parse_constraints:
+    type: sync
+    module: backend.scripts.normalize
+    args: [desc_text]
+    params:
+      returns: List[str]
+  parse_examples_from_text:
+    type: sync
+    module: backend.scripts.normalize
+    args: [desc_text]
+    params:
+      returns: List[Dict]
+  parse_github_url:
+    type: sync
+    module: backend.services.github.api_client
+    args: [url]
+    params:
+      returns: tuple
+  parse_stats:
+    type: sync
+    module: backend.scripts.normalize
+    args: [stats_field, acceptance_rate]
+    params:
+      returns: Dict
+  pick_best:
+    type: sync
+    module: backend.scripts.normalize
+    args: [matches]
+    params:
+      returns: Optional[str]
+  public_route:
+    type: sync
+    module: backend.api.routes
+  run_analysis:
+    type: sync
+    module: backend.services.github.github_analyzer
+  run_judge_from_session:
+    type: sync
+    module: backend.agents.interview_judge.agent
+    args: [session]
+  run_preparation_workflow:
+    type: async
+    module: backend.coordinator.preparation_workflow
+    args: [user_id, resume_text, job_description, linkedin_link, github_link, portfolio_link, additional_info, num_questions,
+      session_id]
+  run_preparation_workflow_sync:
+    type: sync
+    module: backend.coordinator.preparation_workflow
+  save_feedback_to_db:
+    type: sync
+    module: backend.agents.interview_judge.agent
+    args: [session, validated]
+  save_transcript:
+    type: sync
+    module: backend.agents.interviewer.agent
+    args: [session]
+  score:
+    type: sync
+    module: backend.scripts.normalize
+    args: [comp]
+    params:
+      returns: int
+  scrape_portfolio:
+    type: async
+    module: backend.services.portfolio.web_scraper
+    args: [self, url]
+    params:
+      returns: str
+  scrape_portfolio_url:
+    type: async
+    module: backend.services.portfolio.web_scraper
+    args: [url]
+    params:
+      returns: str
+  search_ddgs:
+    type: sync
+    module: backend.agents.interview_judge.agent
+    args: [topic, max_results, delay]
+    params:
+      returns: dict
+  search_interview_questions:
+    type: sync
+    module: backend.agents.search.agent
+    args: [job_description]
+  set_coding_problems:
+    type: sync
+    module: backend.data.database
+    args: [self, problems]
+    params:
+      returns: Dict
+  set_feedback:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id, interview_id, feedback]
+    params:
+      returns: Dict
+  set_general_bqs:
+    type: sync
+    module: backend.data.database
+    args: [self, bqs]
+    params:
+      returns: Dict
+  set_google_cloud_env_vars:
+    type: sync
+    module: backend.config
+  set_personal_experience:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id, experience]
+    params:
+      returns: Dict
+  set_recommended_qas:
+    type: sync
+    module: backend.data.database
+    args: [self, user_id, workflow_id, qas]
+    params:
+      returns: Dict
+  setup_duration:
+    type: sync
+    module: backend.agents.interviewer.agent
+    args: [session, duration_minutes]
+  split_description_parts:
+    type: sync
+    module: backend.scripts.normalize
+    args: [desc_text]
+    params:
+      returns: Tuple
+  start_agent_session:
+    type: async
+    module: backend.agents.interviewer.agent
+    args: [session_id, user_id, workflow_id, duration_minutes, is_audio]
+  start_interview:
+    type: async
+    module: backend.api.routes
+    args: [request, user]
+  start_workflow_with_pdf:
+    type: async
+    module: backend.api.routes
+    args: [file, job_description, linkedin_link, github_link, portfolio_link, additional_info, num_questions, session_id,
+      user]
+  start_workflow_with_text:
+    type: async
+    module: backend.api.routes
+    args: [resume_text, job_description, linkedin_link, github_link, portfolio_link, additional_info, num_questions, session_id,
+      user]
+  summarize_resume:
+    type: sync
+    module: backend.agents.summarizer.agent
+    args: [resume_text, linkedinLink, githubLink, portfolioLink, additionalInfo, job_description]
+  test_connection:
+    type: sync
+    module: backend.services.github.api_client
+    args: [self]
+    params:
+      returns: bool
+  test_github_connection:
+    type: sync
+    module: backend.services.github.github_analyzer
+    args: [self]
+    params:
+      returns: bool
+  to_formatted_string:
+    type: sync
+    module: backend.services.portfolio.data_models
+    args: [self]
+    params:
+      returns: str
+  to_summary_text:
+    type: sync
+    module: backend.services.github.data_models
+    args: [self]
+    params:
+      returns: str
+  update_user_info:
+    type: sync
+    module: backend.api.routes
+    args: [user, updates]
+  upload_to_firestore:
+    type: sync
+    module: backend.scripts.run_and_upload
+    args: [output_path]
+  verify_token:
+    type: async
+    module: backend.api.routes
+    args: [credentials]
+  walk:
+    type: sync
+    module: backend.scripts.normalize
+    args: [node]
+    params:
+      returns: str
+  websocket_endpoint:
+    type: async
+    module: backend.api.routes
+    args: [websocket, session_id, user_id, workflow_id, duration, is_audio]
+
+variables:
+  CI:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [env_path]
+  FIREBASE_KEY_PATH:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [env_path]
+  GITHUB_TOKEN:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [env_path]
+  GOOGLE_CLOUD_PROJECT:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [env_path]
+
+files:
+  ../../:
+    type: pattern
+    actions: [read]
+    params:
+      caller: [os.path.join]
+      pattern: [os.path.dirname(), ../../]
+  ../../../:
+    type: pattern
+    actions: [read]
+    params:
+      caller: [os.path.join]
+      pattern: [os.path.dirname(), ../../../]
+  .env:
+    type: literal
+    actions: [read]
+    params:
+      path: [project_root]
+      caller: [set_google_cloud_env_vars, __init__]
+  input_path:
+    type: variable
+    actions: [read]
+    params:
+      caller: [open, json.load]
+      alias: [f]
+  key_path:
+    type: variable
+    actions: [read]
+    params:
+      caller: [open, json.load]
+      alias: [f]
+  output_path:
+    type: variable
+    actions: [read, write]
+    params:
+      caller: [open, json.load]
+      alias: [f]
+  overrides_path:
+    type: variable
+    actions: [read]
+    params:
+      caller: [open, json.load]
+      alias: [f]
+  path:
+    type: variable
+    actions: [read, delete]
+    params:
+      caller: [os.path.exists, os.remove]
+
+networks:
+  ANSWER_GENERATOR_AGENT:
+    type: api
+    actions: [GET]
+    urls: ['/{...}']
+    protocols: [https]
+    ports: ["443"]
+    params:
+      caller: [extract_portfolio_data]
+      pattern: https://https://{...}
+  url:
+    type: api
+    actions: [GET]
+    protocols: [https]
+    ports: ["443"]
+    params:
+      pattern: https://{url}
+      caller: [_validate_url]
+      dynamic: "True"
+      variable: url
